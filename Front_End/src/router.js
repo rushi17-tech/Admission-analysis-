@@ -3,7 +3,12 @@ import Login from './Login.vue';
 import Signup from './Signup.vue';
 
 
-const routes = [{ path: '/login', component: Login},{path:'/signup', component: Signup}];
+const routes = [
+    { path: '/', redirect: '/login' },
+    { path: '/login', component: Login},
+    {path:'/signup', component: Signup}
+    
+    ];
 
 
 
