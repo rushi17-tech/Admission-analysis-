@@ -1,11 +1,18 @@
-import { createRouter, createWebHistrory } from 'vue-router';
-import Login from '/pages/Login.vue';
+import { createRouter, createWebHistory } from 'vue-router';
+import Login from './Login.vue';  
+
+
 
 const routes = [{ path: '/login', component: Login}];
 
+
+
 const router = createRouter({
-    history: createWebHistrory(),
+    history: createWebHistory(),
     routes,
 });
 
 export default router;
+
+
+

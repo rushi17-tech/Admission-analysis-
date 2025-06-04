@@ -2,11 +2,11 @@
     <div>
         <form>
             <div class="form-group">
-              <lable>Email</lable>
+              <label>Email</label>
               <input type="text" class="form-control"/> 
             </div>
             <div class="form-group">
-              <lable>Password</lable>
+              <label>Password</label>
               <input type="password" class="form-control"/> 
             </div>
 
@@ -19,6 +19,6 @@
         </form>
     </div>
 </template>
-<script>
-export default{};
-</script>
+<script setup>
+
+</script>   
