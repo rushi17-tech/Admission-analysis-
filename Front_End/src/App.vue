@@ -1,11 +1,6 @@
 <template>
   <div class="app-container">
     <header class="app-header">
-      <h1>Addmission Analysis</h1>
-      <nav class="nav-links">
-        <router-link to="/login" class="nav-button">Login</router-link>
-        <router-link to="/signup" class="nav-button">Signup</router-link>
-      </nav>
     </header>
 
     <main class="app-content">
