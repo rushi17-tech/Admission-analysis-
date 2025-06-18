@@ -1,47 +1,88 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import axios from 'axios'
 import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  NavigationMenuViewport,
+  NavigationMenuViewport
 } from '@/components/ui/navigation-menu'
 
-import { Home, BarChart, Users, FilePlus2, CalendarDays } from 'lucide-vue-next'
+import { BarChart, Users, FilePlus2, CalendarDays } from 'lucide-vue-next'
 
 const activeTab = ref('home')
+
+// Dynamic data containers
+const analytics = ref({})
+const students = ref({})
+const applications = ref({})
+const schedule = ref({})
+
+// Watcher to fetch data on tab change
+watch(activeTab, async (tab) => {
+  try {
+    const res = await axios.get(`http://localhost:8000/${tab}`)
+    if (tab === 'analytics') analytics.value = res.data
+    else if (tab === 'students') students.value = res.data
+    else if (tab === 'applications') applications.value = res.data
+    else if (tab === 'schedule') schedule.value = res.data
+  } catch (err) {
+    console.error('API fetch error:', err)
+  }
+})
 </script>
 
 <template>
-  <!-- Top Navigation Bar -->
+  <!-- Navigation -->
   <div class="w-full bg-gradient-to-r from-[#1f2937] via-[#3b82f6] to-[#8b5cf6] p-4 shadow-xl animate-fade-in">
     <NavigationMenu>
-      <NavigationMenuList class="flex space-x-6 text-white font-medium">
+      <NavigationMenuList>
+        <!-- Home Tab with Animated SVG -->
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'home'" class="menu-item flex items-center space-x-2">
-            <Home class="w-5 h-5" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 24 24">
+              <g fill="none" stroke="#fefefe" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+                <path stroke-dasharray="16" stroke-dashoffset="16" d="M4.5 21.5h15">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.8s" values="16;0" />
+                </path>
+                <path stroke-dasharray="16" stroke-dashoffset="16" d="M4.5 21.5v-13.5M19.5 21.5v-13.5">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.8s" dur="0.8s" values="16;0" />
+                </path>
+                <path stroke-dasharray="28" stroke-dashoffset="28" d="M2 10l10 -8l10 8">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" begin="1.6s" dur="1.6s" values="28;0" />
+                </path>
+                <path stroke-dasharray="24" stroke-dashoffset="24" d="M9.5 21.5v-9h5v9">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" begin="2.8s" dur="1.6s" values="24;0" />
+                </path>
+              </g>
+            </svg>
             <span>Home</span>
           </NavigationMenuLink>
         </NavigationMenuItem>
+
+        <!-- Other Tabs -->
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'analytics'" class="menu-item flex items-center space-x-2">
             <BarChart class="w-5 h-5" />
             <span>Analytics</span>
           </NavigationMenuLink>
         </NavigationMenuItem>
+
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'students'" class="menu-item flex items-center space-x-2">
             <Users class="w-5 h-5" />
             <span>Students</span>
           </NavigationMenuLink>
         </NavigationMenuItem>
+
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'applications'" class="menu-item flex items-center space-x-2">
             <FilePlus2 class="w-5 h-5" />
             <span>Applications</span>
           </NavigationMenuLink>
         </NavigationMenuItem>
+
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'schedule'" class="menu-item flex items-center space-x-2">
             <CalendarDays class="w-5 h-5" />
@@ -53,16 +94,14 @@ const activeTab = ref('home')
     </NavigationMenu>
   </div>
 
-  <!-- Main Content Based on Tab -->
+  <!-- Content Area -->
   <div class="p-10 h-[calc(100vh-80px)] bg-gray-100 animate-fade-in">
     <h2 class="text-2xl font-bold mb-6 text-gray-800">University Admission Panel</h2>
 
-    <!-- HOME -->
     <div v-if="activeTab === 'home'">
       <p class="text-gray-700">Welcome to the university dashboard. Select a menu item to begin.</p>
     </div>
 
-    <!-- ANALYTICS -->
     <div v-if="activeTab === 'analytics'">
       <h3 class="section-title">Analytics</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -72,7 +111,6 @@ const activeTab = ref('home')
       </div>
     </div>
 
-    <!-- STUDENTS -->
     <div v-if="activeTab === 'students'">
       <h3 class="section-title">Students Overview</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -82,7 +120,6 @@ const activeTab = ref('home')
       </div>
     </div>
 
-    <!-- APPLICATIONS -->
     <div v-if="activeTab === 'applications'">
       <h3 class="section-title">Applications</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -92,7 +129,6 @@ const activeTab = ref('home')
       </div>
     </div>
 
-    <!-- SCHEDULE -->
     <div v-if="activeTab === 'schedule'">
       <h3 class="section-title">Upcoming Schedule</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
