@@ -63,6 +63,6 @@ export default {
     },
   },
 
-  plugins: [animate, setupInspiraUI],
+  plugins:[require('tailwindcss-animate')] ,
 };
 

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import LoginPage from './pages/login.vue'
 import signuppage from './pages/signup.vue'
+import { RouterView } from 'vue-router'
 
 import { ref } from 'vue'
 
