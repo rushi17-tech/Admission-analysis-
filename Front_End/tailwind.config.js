@@ -1,22 +1,14 @@
-// // tailwind.config.js
-// export default {
-//   content: [
-//     "./index.html",
-//     "./src/**/*.{vue,js,ts,jsx,tsx}",
-//   ],
-//   theme: {
-//     extend: {},
-//   },
-//   plugins: [],
-// }
 import animate from "tailwindcss-animate";
-import { setupInspiraUI } from "@inspira-ui/plugins";
 
 export default {
-  darkMode: "selector",
+  darkMode: "class",
   safelist: ["dark"],
-  prefix: "",
-  content: ["./index.html","./public/**/*.html", "./src/**/*.{vue,js,ts,jsx,tsx}","./pages/**/*.{vue,js}" ],
+  content: [
+    "./index.html",
+    "./public/**/*.html",
+    "./src/**/*.{vue,js,ts,jsx,tsx}",
+    "./pages/**/*.{vue,js}"
+  ],
   theme: {
     extend: {
       colors: {
@@ -62,7 +54,5 @@ export default {
       },
     },
   },
-
-  plugins:[require('tailwindcss-animate')] ,
+  plugins: [animate],
 };
-

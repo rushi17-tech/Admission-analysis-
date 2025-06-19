@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/navigation-menu'
 
 import { BarChart, Users, FilePlus2, CalendarDays } from 'lucide-vue-next'
+import FlipCard from '@/components/flipcard.vue' // ✅ Make sure your file is named correctly
 
 const activeTab = ref('home')
 
@@ -19,7 +20,6 @@ const students = ref({})
 const applications = ref({})
 const schedule = ref({})
 
-// Watcher to fetch data on tab change
 watch(activeTab, async (tab) => {
   try {
     const res = await axios.get(`http://localhost:8000/${tab}`)
@@ -38,7 +38,6 @@ watch(activeTab, async (tab) => {
   <div class="w-full bg-gradient-to-r from-[#1f2937] via-[#3b82f6] to-[#8b5cf6] p-4 shadow-xl animate-fade-in">
     <NavigationMenu>
       <NavigationMenuList>
-        <!-- Home Tab with Animated SVG -->
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'home'" class="menu-item flex items-center space-x-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 24 24">
@@ -62,13 +61,6 @@ watch(activeTab, async (tab) => {
         </NavigationMenuItem>
 
         <!-- Other Tabs -->
-        <NavigationMenuItem>
-          <NavigationMenuLink @click="activeTab = 'analytics'" class="menu-item flex items-center space-x-2">
-            <BarChart class="w-5 h-5" />
-            <span>Analytics</span>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
-
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'students'" class="menu-item flex items-center space-x-2">
             <Users class="w-5 h-5" />
@@ -98,19 +90,66 @@ watch(activeTab, async (tab) => {
   <div class="p-10 h-[calc(100vh-80px)] bg-gray-100 animate-fade-in">
     <h2 class="text-2xl font-bold mb-6 text-gray-800">University Admission Panel</h2>
 
+    <!-- HOME -->
     <div v-if="activeTab === 'home'">
-      <p class="text-gray-700">Welcome to the university dashboard. Select a menu item to begin.</p>
-    </div>
-
-    <div v-if="activeTab === 'analytics'">
-      <h3 class="section-title">Analytics</h3>
+      <p class="text-gray-700 mb-4">Welcome to the university dashboard. Select a menu item to begin.</p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="stat-card">Daily Applications<br /><span class="highlight">56</span></div>
-        <div class="stat-card">Conversion Rate<br /><span class="highlight">38%</span></div>
-        <div class="stat-card">Top Course Today<br /><span class="highlight">B.Tech CSE</span></div>
+        
+        <!-- ✅ FlipCard only on Daily Applications -->
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Daily Applications</h4>
+                <p class="highlight mt-2">56</p>
+              </div>
+            </template>
+            <template #back>
+              <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center">56 new applications received today.</p>
+              </div>
+            </template>
+          </FlipCard>
+        </div>
+
+        <div class="group">
+           <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+             <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Conversion Rate</h4>
+                <p class="highlight mt-2">38%</p>
+              </div>
+             </template>
+             <template #back>
+              <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center">38% Conversion Rate.</p>
+              </div>
+             </template>
+           </FlipCard>
+            
+       
+        </div>
+
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Top Course Today</h4>
+              </div>
+            </template>
+             <template #back>
+              <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                <p class="mt-2 text-sm text-gray-200 text-center">B.Tech CSE</p>
+              </div>
+             </template>
+          </FlipCard> 
+        </div>
       </div>
     </div>
 
+    <!-- STUDENTS -->
     <div v-if="activeTab === 'students'">
       <h3 class="section-title">Students Overview</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -120,6 +159,7 @@ watch(activeTab, async (tab) => {
       </div>
     </div>
 
+    <!-- APPLICATIONS -->
     <div v-if="activeTab === 'applications'">
       <h3 class="section-title">Applications</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -129,6 +169,7 @@ watch(activeTab, async (tab) => {
       </div>
     </div>
 
+    <!-- SCHEDULE -->
     <div v-if="activeTab === 'schedule'">
       <h3 class="section-title">Upcoming Schedule</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">

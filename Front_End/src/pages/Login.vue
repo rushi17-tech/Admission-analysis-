@@ -1,8 +1,38 @@
+<script setup>
+import { ref } from 'vue'
+import { useRouter } from 'vue-router'
+import Wrap from '@/components/wrapbackground.vue'
+
+const email = ref('')
+const password = ref('')
+const errorMessage = ref('')
+const router = useRouter()
+
+const emit = defineEmits(['login-success'])
+
+const handleLogin = () => {
+  if (email.value === 'welcome@gmail.com' && password.value === '1234') {
+    emit('login-success')
+    router.push('/home')
+  } else {
+    errorMessage.value = 'Invalid email or password. Please try again.'
+  }
+}
+</script>
+
 <template>
-  <div class="login-page">
+  <Wrap
+    class="relative w-full h-screen overflow-hidden login-page"
+    :beam-size="5"
+    :beams-per-side="4"
+    :grid-color="'rgba(255, 255, 255, 0.2)'"
+    :perspective="80"
+  >
+    <!-- 🔲 Background Overlay -->
     <div class="overlay"></div>
 
-    <div class="login-card">
+    <!-- 🔐 Login Card -->
+    <div class="relative z-10 login-card">
       <h1 class="animate-slide-down">Welcome</h1>
       <p class="subtitle animate-slide-down">Login to continue to the Admission Analysis Portal</p>
 
@@ -20,63 +50,28 @@
         <p v-if="errorMessage" class="error animate-fade-in">{{ errorMessage }}</p>
 
         <button type="submit" class="ripple-button">Login</button>
-        <p>
-          Don't have an account?
-          <router-link to="/signup">Signup here</router-link>
-        </p>
+        <p class="text-black">
+  Don't have an account?
+  <router-link to="/signup" class="text-black underline hover:text-blue-600">Signup here</router-link>
+</p>
+
       </form>
     </div>
-  </div>
+  </Wrap>
 </template>
 
-<script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router' // import router
-
-const email = ref('')
-const password = ref('')
-const errorMessage = ref('')
-const router = useRouter()  
-
-// Emit login-success when correct credentials are entered
-const emit = defineEmits(['login-success'])
-
-const handleLogin = () => {
-  if (email.value === 'welcome@gmail.com' && password.value === '1234') {
-    emit('login-success')
-       router.push('/home')
-  } else {
-    errorMessage.value = 'Invalid email or password. Please try again.'
-  }
-}
-</script>
-
-
 <style scoped>
-/* Background and layout */
 .login-page {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  margin: 0;
-  padding: 0;
   background: url('/background-bg.png') no-repeat center center;
   background-size: cover;
   display: flex;
   justify-content: center;
   align-items: center;
-  overflow: hidden;
-  z-index: 0;
 }
 
 .overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: rgba(0, 0, 50, 0.3);
   z-index: 1;
 }
@@ -94,33 +89,27 @@ const handleLogin = () => {
   animation: card-pop 1s ease forwards;
   transition: transform 0.3s ease;
 }
-
 .login-card:hover {
   transform: translateY(-5px) scale(1.02);
 }
-
 h1, .subtitle {
   animation: slide-down 0.6s ease;
 }
-
 .subtitle {
   font-size: 0.95rem;
   color: #666;
   margin-bottom: 1.5rem;
 }
-
 .form-group {
   margin-bottom: 1.2rem;
   text-align: left;
 }
-
 label {
   display: block;
   font-weight: 600;
   margin-bottom: 0.4rem;
   color: #333;
 }
-
 input.animated-input {
   width: 100%;
   padding: 0.6rem;
@@ -129,7 +118,6 @@ input.animated-input {
   font-size: 0.95rem;
   transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
-
 input.animated-input:hover,
 input.animated-input:focus {
   transform: translateY(-3px);
@@ -137,7 +125,6 @@ input.animated-input:focus {
   border-color: #007bff;
   outline: none;
 }
-
 button.ripple-button {
   width: 100%;
   padding: 0.7rem;
@@ -151,12 +138,10 @@ button.ripple-button {
   overflow: hidden;
   transition: transform 0.3s ease, background-color 0.3s ease;
 }
-
 button.ripple-button:hover {
   transform: translateY(-3px) scale(1.05);
   background-color: #0056b3;
 }
-
 button.ripple-button::after {
   content: '';
   position: absolute;
@@ -169,29 +154,24 @@ button.ripple-button::after {
   transform: translate(-50%, -50%);
   transition: width 0.5s ease, height 0.5s ease;
 }
-
 button.ripple-button:active::after {
   width: 200%;
   height: 500%;
 }
-
 .error {
   color: red;
   font-size: 0.9rem;
   margin-top: 0.5rem;
   animation: fade-in 0.5s ease;
 }
-
 @keyframes fade-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes slide-down {
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 @keyframes card-pop {
   from { opacity: 0; transform: scale(0.95); }
   to { opacity: 1; transform: scale(1); }
