@@ -9,12 +9,12 @@ import {
   NavigationMenuViewport
 } from '@/components/ui/navigation-menu'
 
-import { BarChart, Users, FilePlus2, CalendarDays } from 'lucide-vue-next'
-import FlipCard from '@/components/flipcard.vue' // ✅ Make sure your file is named correctly
+import { BarChart, Users, FilePlus2, CalendarDays, GraduationCap } from 'lucide-vue-next'
+import FlipCard from '@/components/flipcard.vue'
 
 const activeTab = ref('home')
 
-// Dynamic data containers
+// Data containers
 const analytics = ref({})
 const students = ref({})
 const applications = ref({})
@@ -60,7 +60,6 @@ watch(activeTab, async (tab) => {
           </NavigationMenuLink>
         </NavigationMenuItem>
 
-        <!-- Other Tabs -->
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'students'" class="menu-item flex items-center space-x-2">
             <Users class="w-5 h-5" />
@@ -81,12 +80,19 @@ watch(activeTab, async (tab) => {
             <span>Schedule</span>
           </NavigationMenuLink>
         </NavigationMenuItem>
+
+        <NavigationMenuItem>
+          <NavigationMenuLink @click="activeTab = 'school'" class="menu-item flex items-center space-x-2">
+            <GraduationCap class="w-5 h-5" />
+            <span>School</span>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
       </NavigationMenuList>
       <NavigationMenuViewport class="mt-2 animate-slide-down" />
     </NavigationMenu>
   </div>
 
-  <!-- Content Area -->
+  <!-- Content -->
   <div class="p-10 h-[calc(100vh-80px)] bg-gray-100 animate-fade-in">
     <h2 class="text-2xl font-bold mb-6 text-gray-800">University Admission Panel</h2>
 
@@ -94,8 +100,6 @@ watch(activeTab, async (tab) => {
     <div v-if="activeTab === 'home'">
       <p class="text-gray-700 mb-4">Welcome to the university dashboard. Select a menu item to begin.</p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        <!-- ✅ FlipCard only on Daily Applications -->
         <div class="group">
           <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
             <template #default>
@@ -114,22 +118,20 @@ watch(activeTab, async (tab) => {
         </div>
 
         <div class="group">
-           <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-             <template #default>
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
               <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
                 <h4 class="text-xl font-semibold text-gray-800">Conversion Rate</h4>
                 <p class="highlight mt-2">38%</p>
               </div>
-             </template>
-             <template #back>
+            </template>
+            <template #back>
               <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
                 <h4 class="text-xl font-semibold">Details</h4>
                 <p class="mt-2 text-sm text-gray-200 text-center">38% Conversion Rate.</p>
               </div>
-             </template>
-           </FlipCard>
-            
-       
+            </template>
+          </FlipCard>
         </div>
 
         <div class="group">
@@ -139,12 +141,12 @@ watch(activeTab, async (tab) => {
                 <h4 class="text-xl font-semibold text-gray-800">Top Course Today</h4>
               </div>
             </template>
-             <template #back>
+            <template #back>
               <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
                 <p class="mt-2 text-sm text-gray-200 text-center">B.Tech CSE</p>
               </div>
-             </template>
-          </FlipCard> 
+            </template>
+          </FlipCard>
         </div>
       </div>
     </div>
@@ -175,6 +177,25 @@ watch(activeTab, async (tab) => {
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div class="stat-card">Entrance Exam - B.Tech<br /><span class="highlight">22nd June</span></div>
         <div class="stat-card">Interview Round - MBA<br /><span class="highlight">25th June</span></div>
+      </div>
+    </div>
+
+    <!-- SCHOOL PANEL -->
+    <div v-if="activeTab === 'school'">
+      <h3 class="section-title">Select a School</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="stat-card cursor-pointer hover:bg-blue-600 hover:text-white">
+          <h4 class="text-xl font-semibold">SET</h4>
+          <p class="mt-2 text-sm">School of Engineering and Technology</p>
+        </div>
+        <div class="stat-card cursor-pointer hover:bg-green-600 hover:text-white">
+          <h4 class="text-xl font-semibold">SBL</h4>
+          <p class="mt-2 text-sm">School of Business and Law</p>
+        </div>
+        <div class="stat-card cursor-pointer hover:bg-purple-600 hover:text-white">
+          <h4 class="text-xl font-semibold">SEDA</h4>
+          <p class="mt-2 text-sm">School of Environmental Design & Architecture</p>
+        </div>
       </div>
     </div>
   </div>
