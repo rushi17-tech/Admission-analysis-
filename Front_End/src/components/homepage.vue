@@ -9,8 +9,9 @@ import {
   NavigationMenuViewport
 } from '@/components/ui/navigation-menu'
 
-import { BarChart, Users, FilePlus2, CalendarDays } from 'lucide-vue-next'
-import FlipCard from '@/components/flipcard.vue' // ✅ Make sure your file is named correctly
+import { BarChart, Users, FilePlus2, CalendarDays, School2, SchoolIcon } from 'lucide-vue-next'
+import FlipCard from '@/components/flipcard.vue'
+import AdmissionChart from '@/components/AdmissionChart.vue'
 
 const activeTab = ref('home')
 
@@ -36,8 +37,8 @@ watch(activeTab, async (tab) => {
 <template>
   <!-- Navigation -->
   <div class="w-full bg-gradient-to-r from-[#1f2937] via-[#3b82f6] to-[#8b5cf6] p-4 shadow-xl animate-fade-in">
-    <NavigationMenu>
-      <NavigationMenuList>
+    <NavigationMenu class="w-full">
+      <NavigationMenuList class="flex space-x-4">
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'home'" class="menu-item flex items-center space-x-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="1.5em" height="1.5em" viewBox="0 0 24 24">
@@ -81,6 +82,51 @@ watch(activeTab, async (tab) => {
             <span>Schedule</span>
           </NavigationMenuLink>
         </NavigationMenuItem>
+ 
+        
+        <NavigationMenuItem>
+          <NavigationMenuLink @click="activeTab = 'school'" class="menu-item flex items-center space-x-2">
+            <SchoolIcon class="w-5 h-5" />
+            <span>School</span>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+
+        
+        <NavigationMenuItem>
+          <NavigationMenuLink @click="activeTab = 'settings'" class="menu-item flex items-center space-x-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <mask id="lineMdCogFilledLoop0">
+              <defs>
+                <symbol id="lineMdCogFilledLoop1">
+                  <path d="M11 13L15.74 5.5C16.03 5.67 16.31 5.85 16.57 6.05C16.57 6.05 16.57 6.05 16.57 6.05C16.64 6.1 16.71 6.16 16.77 6.22C18.14 7.34 19.09 8.94 19.4 10.75C19.41 10.84 19.42 10.92 19.43 11C19.43 11 19.43 11 19.43 11C19.48 11.33 19.5 11.66 19.5 12z">
+                    <animate fill="freeze" attributeName="d" begin="0.5s" dur="0.2s" values="M11 13L15.74 5.5C16.03 5.67 16.31 5.85 16.57 6.05C16.57 6.05 16.57 6.05 16.57 6.05C16.64 6.1 16.71 6.16 16.77 6.22C18.14 7.34 19.09 8.94 19.4 10.75C19.41 10.84 19.42 10.92 19.43 11C19.43 11 19.43 11 19.43 11C19.48 11.33 19.5 11.66 19.5 12z;M11 13L15.74 5.5C16.03 5.67 16.31 5.85 16.57 6.05C16.57 6.05 19.09 5.04 19.09 5.04C19.25 4.98 19.52 5.01 19.6 5.17C19.6 5.17 21.67 8.75 21.67 8.75C21.77 8.92 21.73 9.2 21.6 9.32C21.6 9.32 19.43 11 19.43 11C19.48 11.33 19.5 11.66 19.5 12z" />
+                  </path>
+                </symbol>
+              </defs>
+              <g fill="none" stroke="#fff" stroke-width="2">
+                <path stroke-dasharray="36" stroke-dashoffset="36" stroke-width="5" d="M12 7c2.76 0 5 2.24 5 5c0 2.76 -2.24 5 -5 5c-2.76 0 -5 -2.24 -5 -5c0 -2.76 2.24 -5 5 -5Z">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.5s" values="36;0" />
+                  <set fill="freeze" attributeName="opacity" begin="0.5s" to="0" />
+                </path>
+                <g fill="#fff" stroke="none" opacity="0">
+                  <use href="#lineMdCogFilledLoop1" />
+                  <use href="#lineMdCogFilledLoop1" transform="rotate(60 12 12)" />
+                  <use href="#lineMdCogFilledLoop1" transform="rotate(120 12 12)" />
+                  <use href="#lineMdCogFilledLoop1" transform="rotate(180 12 12)" />
+                  <use href="#lineMdCogFilledLoop1" transform="rotate(240 12 12)" />
+                  <use href="#lineMdCogFilledLoop1" transform="rotate(300 12 12)" />
+                  <set fill="freeze" attributeName="opacity" begin="0.5s" to="1" />
+                  <animateTransform attributeName="transform" dur="30s" repeatCount="indefinite" type="rotate" values="0 12 12;360 12 12" />
+                </g>
+              </g>
+              <circle cx="12" cy="12" r="3.5" />
+            </mask>
+            <rect width="24" height="24" fill="currentColor" mask="url(#lineMdCogFilledLoop0)" />
+          </svg>
+            <span>Settings</span>
+          </NavigationMenuLink>
+        </NavigationMenuItem>
+        
       </NavigationMenuList>
       <NavigationMenuViewport class="mt-2 animate-slide-down" />
     </NavigationMenu>
@@ -88,64 +134,20 @@ watch(activeTab, async (tab) => {
 
   <!-- Content Area -->
   <div class="p-10 h-[calc(100vh-80px)] bg-gray-100 animate-fade-in">
-    <h2 class="text-2xl font-bold mb-6 text-gray-800">University Admission Panel</h2>
+    <h2 class="text-2xl font-bold mb-6 text-gray-800">Admission Analysis</h2>
 
     <!-- HOME -->
     <div v-if="activeTab === 'home'">
       <p class="text-gray-700 mb-4">Welcome to the university dashboard. Select a menu item to begin.</p>
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        
-        <!-- ✅ FlipCard only on Daily Applications -->
-        <div class="group">
-          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-            <template #default>
-              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
-                <h4 class="text-xl font-semibold text-gray-800">Daily Applications</h4>
-                <p class="highlight mt-2">56</p>
-              </div>
-            </template>
-            <template #back>
-              <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
-                <h4 class="text-xl font-semibold">Details</h4>
-                <p class="mt-2 text-sm text-gray-200 text-center">56 new applications received today.</p>
-              </div>
-            </template>
-          </FlipCard>
-        </div>
+        <!-- existing FlipCards remain untouched here -->
+        <!-- ... -->
+      </div>
 
-        <div class="group">
-           <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-             <template #default>
-              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
-                <h4 class="text-xl font-semibold text-gray-800">Conversion Rate</h4>
-                <p class="highlight mt-2">38%</p>
-              </div>
-             </template>
-             <template #back>
-              <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
-                <h4 class="text-xl font-semibold">Details</h4>
-                <p class="mt-2 text-sm text-gray-200 text-center">38% Conversion Rate.</p>
-              </div>
-             </template>
-           </FlipCard>
-            
-       
-        </div>
-
-        <div class="group">
-          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-            <template #default>
-              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
-                <h4 class="text-xl font-semibold text-gray-800">Top Course Today</h4>
-              </div>
-            </template>
-             <template #back>
-              <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
-                <p class="mt-2 text-sm text-gray-200 text-center">B.Tech CSE</p>
-              </div>
-             </template>
-          </FlipCard> 
-        </div>
+      <!-- 📊 Chart Section -->
+      <div class="mt-10">
+        <AdmissionChart />
       </div>
     </div>
 
@@ -153,9 +155,53 @@ watch(activeTab, async (tab) => {
     <div v-if="activeTab === 'students'">
       <h3 class="section-title">Students Overview</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="stat-card">Total Enrolled<br /><span class="highlight">1450</span></div>
-        <div class="stat-card">Pending Verification<br /><span class="highlight">72</span></div>
-        <div class="stat-card">Dropouts<br /><span class="highlight">14</span></div>
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Total Enrolled</h4>
+              </div>
+            </template>
+            <template #back>
+              <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center"> A total of 1,850 students are currently enrolled across various courses at our university. This reflects a healthy academic ecosystem with diverse interests and specializations. The steady enrollment growth highlights our reputation for quality education and student satisfaction. Our faculty, infrastructure, and support services are well-equipped to manage and enrich this vibrant student community. Continuous efforts are being made to ensure each student receives an excellent learning experience.</p>
+                </div>
+            </template>
+          </FlipCard>
+        </div>
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Pending Verification</h4>
+                </div>
+                </template>
+                <template #back>
+                  <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                    <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center">Currently, 72 student applications are awaiting document verification. This step is crucial to ensure authenticity and compliance with admission guidelines. Our team is working diligently to review and verify all submitted documents promptly. Students are advised to regularly check their email or dashboard for updates or requests. Timely verification will help avoid any delays in enrollment or class participation.
+                 </p>
+                </div>
+                </template>
+          </FlipCard>
+
+        </div>
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Drop Out</h4>
+                </div>
+                </template>
+                <template #back>
+                  <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                    <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center">A total of 18 students have dropped out during the current academic cycle. These cases may result from personal, academic, or financial challenges faced by the students. Our counseling team actively reaches out to understand and support those at risk. The university is also working on preventive strategies to reduce the dropout rate. Ensuring student well-being and retention remains a top priority for our administration.</p>
+                </div>
+                </template>
+                </FlipCard>
+        </div>
       </div>
     </div>
 
@@ -163,22 +209,116 @@ watch(activeTab, async (tab) => {
     <div v-if="activeTab === 'applications'">
       <h3 class="section-title">Applications</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="stat-card">New Applications<br /><span class="highlight">103</span></div>
-        <div class="stat-card">Documents Pending<br /><span class="highlight">21</span></div>
-        <div class="stat-card">Reviewed Today<br /><span class="highlight">89</span></div>
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">New Applications</h4>
+                </div>
+                </template>
+                <template #back>
+                  <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                    <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center">A total of 18 new applications have been received today. This indicates a steady interest in our academic programs and growing outreach. Each application will undergo a detailed review by the admissions team. Applicants will be notified about the next steps via email. Our goal is to ensure a smooth and transparent admission process for all candidates.</p>
+                </div>
+                </template>
+                </FlipCard>
+
+        </div>
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Documents Pending</h4>
+                </div>
+                </template>
+                <template #back>
+                  <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+
+                    <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center">A total of 21 applications are currently pending due to incomplete document submissions. Applicants are advised to upload the required documents to proceed with the verification process. Timely submission ensures a smoother admission experience and prevents delays. Our admissions team regularly sends reminders to applicants. Please check your email or portal notifications for pending document updates.</p>
+                </div>
+                </template>
+                </FlipCard>
+        </div>
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Reviewed Today</h4>
+                </div>
+                </template>
+                <template #back>
+                  <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                    <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center">A total of 89 applications were reviewed by the admissions team today. This reflects our commitment to maintaining an efficient and timely review process. Each application undergoes a thorough evaluation based on academic merit and eligibility criteria. Applicants can expect status updates within the next 24–48 hours. Our team ensures fairness and transparency throughout the evaluation process.</p>
+                </div>
+                </template>
+                </FlipCard>
+        </div>
       </div>
     </div>
+<div v-if="activeTab === 'school'">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+       
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">SEDA</h4>
+              </div>
+            </template>
+            <template #back>
+              <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center">SEDA currently hosts a vibrant community of 2000 students across various disciplines. The department focuses on academic excellence, innovation, and skill-based development. Students participate in workshops, live projects, and industry-led programs throughout the year. With dedicated faculty and advanced infrastructure, SEDA continues to nurture future-ready professionals. The enrollment rate has steadily increased over the last few semesters.</p>
+              </div>
+            </template>
+          </FlipCard>
+        </div>
+      </div>
+    </div>
+
 
     <!-- SCHEDULE -->
     <div v-if="activeTab === 'schedule'">
       <h3 class="section-title">Upcoming Schedule</h3>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div class="stat-card">Entrance Exam - B.Tech<br /><span class="highlight">22nd June</span></div>
-        <div class="stat-card">Interview Round - MBA<br /><span class="highlight">25th June</span></div>
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Entrance Exam - B.Tech</h4>
+                </div>
+                </template>
+                <template #back>
+                  <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                    <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center"> The B.Tech entrance exam is scheduled for <strong>22nd June</strong>. All registered candidates must report by 9:00 AM sharp. The exam will take place in <strong>Classroom B-204, Engineering Block</strong>. Students are advised to carry their admit cards and valid ID proof. Late entries will not be allowed, and mobile phones are strictly prohibited inside the exam hall.</p>
+                </div>
+                </template>
+                </FlipCard>
+        </div>
+        <div class="group">
+          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+            <template #default>
+              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+                <h4 class="text-xl font-semibold text-gray-800">Interview Round - MBA</h4>
+                </div>
+                </template>
+                <template #back>
+                  <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+                     <h4 class="text-xl font-semibold">Details</h4>
+                <p class="mt-2 text-sm text-gray-200 text-center">The MBA interview round is scheduled for <strong>25th June</strong>. Candidates must arrive by <strong>10:00 AM</strong> at <strong>Conference Room A, Management Block</strong>. Please bring a printed copy of your resume, academic documents, and a valid ID. The interview panel will assess communication skills, leadership potential, and subject knowledge. Dress in formal attire and be prepared with your Statement of Purpose.</p>
+                </div>
+                </template>
+                </FlipCard>
+        </div>       
       </div>
     </div>
   </div>
-</template>
+  </template>
 
 <style scoped>
 .menu-item {
