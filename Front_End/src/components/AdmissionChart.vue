@@ -14,18 +14,9 @@ import { ref, computed, watch } from 'vue'
 
 ChartJS.register(Title, Tooltip, Legend, CategoryScale, LinearScale, BarElement, ArcElement)
 
-// ✅ Cities list
 const cities = ref([
-  'Surat',
-  'Ahmedabad',
-  'Vadodara',
-  'Rajkot',
-  'Gandhinagar',
-  'Jamnagar',
-  'Bhavnagar',
-  'Junagadh',
-  'Nadiad',
-  'Other'
+  'Surat', 'Ahmedabad', 'Vadodara', 'Rajkot', 'Gandhinagar',
+  'Jamnagar', 'Bhavnagar', 'Junagadh', 'Nadiad', 'Other'
 ])
 
 const selectedCities = ref([...cities.value.slice(0, 4)])
@@ -33,23 +24,16 @@ const dropdownOpen = ref(false)
 const searchQuery = ref('')
 const allSelected = ref(false)
 
-// 🔍 Computed city list after search
 const filteredCities = computed(() => {
   return cities.value.filter(city =>
     city.toLowerCase().includes(searchQuery.value.toLowerCase())
   )
 })
 
-// Watch select all checkbox
 watch(allSelected, (val) => {
-  if (val) {
-    selectedCities.value = [...cities.value]
-  } else {
-    selectedCities.value = []
-  }
+  selectedCities.value = val ? [...cities.value] : []
 })
 
-// 🎯 Chart data source
 const cityWiseData = {
   Surat: { male: 40, female: 20, admitted: 30, pending: 20, rejected: 10 },
   Ahmedabad: { male: 25, female: 30, admitted: 35, pending: 10, rejected: 10 },
@@ -63,7 +47,6 @@ const cityWiseData = {
   Other: { male: 10, female: 15, admitted: 10, pending: 5, rejected: 10 }
 }
 
-// 📊 Bar chart data
 const filteredCityData = computed(() => {
   const labels = []
   const admitted = []
@@ -103,7 +86,6 @@ const filteredCityData = computed(() => {
   }
 })
 
-// 🍩 Pie chart data
 const pieData = computed(() => {
   let totalMale = 0
   let totalFemale = 0
@@ -144,10 +126,9 @@ const barOptions = {
 
 <template>
   <div class="bg-white min-h-screen p-6 space-y-8 text-black">
-    <!-- 🔽 Dropdown with Checkbox Filter -->
+    <!-- 🔽 City Dropdown Filter -->
     <div class="bg-white p-4 rounded-xl shadow space-y-4 relative">
       <h2 class="text-lg font-bold text-gray-800">Select Cities</h2>
-
       <div class="relative w-full md:w-1/2">
         <button
           @click="dropdownOpen = !dropdownOpen"
@@ -155,37 +136,26 @@ const barOptions = {
         >
           {{ selectedCities.length ? selectedCities.join(', ') : 'Select cities' }}
         </button>
-
         <div
           v-if="dropdownOpen"
           class="absolute z-10 mt-1 w-full bg-white border rounded-md shadow-lg max-h-60 overflow-y-auto p-2 space-y-2"
         >
-          <!-- 🔍 Search -->
           <input
             type="text"
             v-model="searchQuery"
             placeholder="Search cities..."
             class="w-full px-2 py-1 border rounded-md focus:outline-none"
           />
-
-          <!-- ✅ Select All -->
           <label class="flex items-center gap-2 px-1 py-1 text-sm font-medium">
             <input type="checkbox" v-model="allSelected" />
             Select All
           </label>
-
-          <!-- 📍 City Options -->
           <label
             v-for="city in filteredCities"
             :key="city"
             class="flex items-center gap-2 px-2 py-1 text-sm"
           >
-            <input
-              type="checkbox"
-              :value="city"
-              v-model="selectedCities"
-              :checked="selectedCities.includes(city)"
-            />
+            <input type="checkbox" :value="city" v-model="selectedCities" />
             {{ city }}
           </label>
         </div>
@@ -194,15 +164,13 @@ const barOptions = {
 
     <!-- 📊 Stacked Bar Chart -->
     <div class="bg-white p-6 rounded-xl shadow">
-      <h2 class="text-xl font-bold mb-4 text-center text-gray-800">
-        Admission Status by City
-      </h2>
+      <h2 class="text-xl font-bold mb-4 text-center text-gray-800">Admission Status by City</h2>
       <div class="w-full h-[500px]">
         <Bar :data="filteredCityData" :options="barOptions" />
       </div>
     </div>
 
-    <!-- 🍩 Gender Summary Pie Chart -->
+    <!-- 🍩 Pie Chart -->
     <div class="bg-white p-4 rounded-xl shadow w-full md:w-[60%] mx-auto">
       <h2 class="text-lg font-bold mb-2 text-center text-gray-800">Gender Summary</h2>
       <p class="text-sm text-center mb-4 text-gray-600">
@@ -214,3 +182,12 @@ const barOptions = {
     </div>
   </div>
 </template>
+
+<style>
+html,
+body,
+#app {
+  min-height: 100%;
+  background-color: white;
+}
+</style>
