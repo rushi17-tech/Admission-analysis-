@@ -9,10 +9,10 @@ from sqlmodel import SQLModel, Field, create_engine, Session, select
 
 app = FastAPI()
 
-# Allow CORS (important for frontend communication)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],  # Vue.js default port
+    allow_origins=["http://localhost:5173"], 
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -72,5 +72,3 @@ class EntranceExamSchedule(SQLModel, table=True):
     datetime: _datetime
     round_no: int
 
-
-# In-memory database
