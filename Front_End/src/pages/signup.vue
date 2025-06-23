@@ -1,16 +1,10 @@
 <template>
   <div class="signup-page">
-    <!-- 🌌 Wrap Background Component -->
-    <Wrap class="wrap-bg" />
-
-    <!-- Overlay for better readability -->
     <div class="overlay"></div>
-
-    <!-- Signup Card -->
+    
     <div class="signup-card">
-      <h1 class="text-black ,text-50xl font-bold">Signup Page</h1>
-
-      <p class="subtitle, text-black ,">Admission Analysis</p>
+      <h1>Signup Page</h1>
+      <p class="subtitle">Create your account below</p>
 
       <form @submit.prevent="handleSignup" class="form">
         <div class="form-group">
@@ -31,10 +25,7 @@
         <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
         <button type="submit" class="ripple-button">Signup</button>
-        <p class="text-black">
-          Already have an account?
-        </p>
-        <router-link to="/login" class="text-black underline hover:text-blue-600">Back to Login</router-link>
+        <a href="/login" class="nav-button text-blue-600 font-semibold ml-4 hover:underline hover:text-blue-800">Already have an account?Login</a>
       </form>
     </div>
   </div>
@@ -42,7 +33,6 @@
 
 <script setup>
 import { ref } from 'vue'
-import Wrap from '@/components/wrapbackground.vue'
 
 const email = ref('')
 const password = ref('')
@@ -54,6 +44,7 @@ const handleSignup = () => {
     errorMessage.value = 'Passwords do not match!'
   } else {
     errorMessage.value = ''
+    // Signup logic here
     alert('Signup successful!')
   }
 }
@@ -61,28 +52,20 @@ const handleSignup = () => {
 
 <style scoped>
 .signup-page {
-  position: fixed;
+   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
   height: 100vh;
   margin: 0;
   padding: 0;
+  background: url('/admission-bg.png') no-repeat center center;
+  background-size: cover;
   display: flex;
   justify-content: center;
   align-items: center;
   overflow: hidden;
   z-index: 0;
-}
-
-.wrap-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: 0;
-  pointer-events: none;
 }
 
 .overlay {
