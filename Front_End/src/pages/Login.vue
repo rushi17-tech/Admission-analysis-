@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 
-
 const email = ref('')
 const password = ref('')
 const errorMessage = ref('')
@@ -21,169 +20,195 @@ const handleLogin = () => {
 </script>
 
 <template>
-  <Wrap
-    class="relative w-full h-screen overflow-hidden login-page"
-    :beam-size="5"
-    :beams-per-side="4"
-    :grid-color="'rgba(255, 255, 255, 0.2)'"
-    :perspective="80"
-  >
-    <!-- 🔲 Background Overlay -->
-    <div class="overlay"></div>
-
-    <!-- 🔐 Login Card -->
-    <div class="relative z-10 login-card">
-      <h1 class="animate-slide-down">Welcome</h1>
-      <p class="subtitle animate-slide-down">Login to continue to the Admission Analysis Portal</p>
-
-      <form @submit.prevent="handleLogin" class="form">
-        <div class="form-group animate-fade-in">
+  <div class="login-page">
+    <div class="login-box">
+      <h2>Login</h2>
+      <form @submit.prevent="handleLogin">
+        <div class="user-box">
+          <input type="email" v-model="email" required />
           <label>Email</label>
-          <input type="email" v-model="email" required class="animated-input" />
         </div>
-
-        <div class="form-group animate-fade-in">
+        <div class="user-box">
+          <input type="password" v-model="password" required />
           <label>Password</label>
-          <input type="password" v-model="password" required class="animated-input" />
         </div>
+        <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
-        <p v-if="errorMessage" class="error animate-fade-in">{{ errorMessage }}</p>
-
-        <button type="submit" class="ripple-button">Login</button>
-        <p class="text-black">
-  Don't have an account?
-  <router-link to="/signup" class="text-black underline hover:text-blue-600">Signup here</router-link>
-</p>
-
+        <button class="neon-button" type="submit">
+          <span></span><span></span><span></span><span></span>
+          Submit
+        </button>
+        <p class="signup-link">
+          Don't have an account?
+          <router-link to="/signup">Signup here</router-link>
+        </p>
       </form>
     </div>
-  </Wrap>
+  </div>
 </template>
 
 <style scoped>
 .login-page {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
   height: 100vh;
   margin: 0;
   padding: 0;
-  background: url('/background-bg.png') no-repeat center center;
-  background-size: cover;
+  font-family: sans-serif;
+  background: linear-gradient(#141e30, #243b55);
   display: flex;
-  justify-content: center;
   align-items: center;
-  overflow: hidden;
-  z-index: 0;
+  justify-content: center;
 }
 
-
-.overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 50, 0.3);
-  z-index: 1;
-}
-
-.login-card {
-  position: relative;
-  z-index: 2;
-  background: rgba(255, 255, 255, 0.95);
-  padding: 2.5rem;
-  border-radius: 40px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
-  width: 100%;
-  max-width: 400px;
+.login-box {
+  background: rgba(0, 0, 0, 0.5);
+  padding: 40px;
+  width: 400px;
+  border-radius: 10px;
+  box-shadow: 0 15px 25px rgba(0, 0, 0, 0.6);
+  box-sizing: border-box;
   text-align: center;
-  animation: card-pop 1s ease forwards;
-  transition: transform 0.3s ease;
 }
-.login-card:hover {
-  transform: translateY(-5px) scale(1.02);
+
+.login-box h2 {
+  color: #fff;
+  margin-bottom: 30px;
 }
-h1, .subtitle {
-  animation: slide-down 0.6s ease;
+
+.user-box {
+  position: relative;
+  margin-bottom: 30px;
 }
-.subtitle {
-  font-size: 0.95rem;
-  color: #666;
-  margin-bottom: 1.5rem;
-}
-.form-group {
-  margin-bottom: 1.2rem;
-  text-align: left;
-}
-label {
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.4rem;
-  color: #333;
-}
-input.animated-input {
+
+.user-box input {
   width: 100%;
-  padding: 0.6rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-}
-input.animated-input:hover,
-input.animated-input:focus {
-  transform: translateY(-3px);
-  box-shadow: 0 0 10px rgba(0, 123, 255, 0.4);
-  border-color: #007bff;
+  padding: 10px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid #fff;
+  color: #fff;
+  font-size: 16px;
   outline: none;
 }
-button.ripple-button {
-  width: 100%;
-  padding: 0.7rem;
-  font-size: 1rem;
-  background-color: #007bff;
-  border: none;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  position: relative;
-  overflow: hidden;
-  transition: transform 0.3s ease, background-color 0.3s ease;
-}
-button.ripple-button:hover {
-  transform: translateY(-3px) scale(1.05);
-  background-color: #0056b3;
-}
-button.ripple-button::after {
-  content: '';
+
+.user-box label {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 0;
-  height: 0;
-  background: rgba(255, 255, 255, 0.4);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
-  transition: width 0.5s ease, height 0.5s ease;
+  top: 0;
+  left: 0;
+  padding: 10px 0;
+  font-size: 16px;
+  color: #fff;
+  pointer-events: none;
+  transition: 0.5s;
 }
-button.ripple-button:active::after {
-  width: 200%;
-  height: 500%;
+
+.user-box input:focus ~ label,
+.user-box input:valid ~ label {
+  top: -20px;
+  font-size: 12px;
+  color: #03e9f4;
 }
+
+.neon-button {
+  position: relative;
+  display: inline-block;
+  padding: 10px 20px;
+  color: #03e9f4;
+  font-size: 16px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-transform: uppercase;
+  overflow: hidden;
+  margin-top: 20px;
+  letter-spacing: 4px;
+}
+
+.neon-button:hover {
+  background: #03e9f4;
+  color: #fff;
+  border-radius: 5px;
+  box-shadow: 0 0 5px #03e9f4,
+              0 0 25px #03e9f4,
+              0 0 50px #03e9f4,
+              0 0 100px #03e9f4;
+}
+
+.neon-button span {
+  position: absolute;
+  display: block;
+}
+
+.neon-button span:nth-child(1) {
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #03e9f4);
+  animation: anim1 1s linear infinite;
+}
+
+.neon-button span:nth-child(2) {
+  right: 0;
+  top: -100%;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, #03e9f4);
+  animation: anim2 1s linear infinite;
+  animation-delay: 0.25s;
+}
+
+.neon-button span:nth-child(3) {
+  bottom: 0;
+  right: -100%;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(270deg, transparent, #03e9f4);
+  animation: anim3 1s linear infinite;
+  animation-delay: 0.5s;
+}
+
+.neon-button span:nth-child(4) {
+  left: 0;
+  bottom: -100%;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(360deg, transparent, #03e9f4);
+  animation: anim4 1s linear infinite;
+  animation-delay: 0.75s;
+}
+
+@keyframes anim1 {
+  0% { left: -100%; }
+  50%, 100% { left: 100%; }
+}
+@keyframes anim2 {
+  0% { top: -100%; }
+  50%, 100% { top: 100%; }
+}
+@keyframes anim3 {
+  0% { right: -100%; }
+  50%, 100% { right: 100%; }
+}
+@keyframes anim4 {
+  0% { bottom: -100%; }
+  50%, 100% { bottom: 100%; }
+}
+
 .error {
-  color: red;
+  color: #ff4d4f;
+  margin-top: -10px;
   font-size: 0.9rem;
-  margin-top: 0.5rem;
-  animation: fade-in 0.5s ease;
 }
-@keyframes fade-in {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+
+.signup-link {
+  margin-top: 20px;
+  color: #ccc;
 }
-@keyframes slide-down {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
+.signup-link a {
+  color: #03e9f4;
+  text-decoration: underline;
 }
-@keyframes card-pop {
-  from { opacity: 0; transform: scale(0.95); }
-  to { opacity: 1; transform: scale(1); }
+.signup-link a:hover {
+  color: #fff;
 }
 </style>

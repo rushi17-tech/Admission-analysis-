@@ -107,6 +107,29 @@ const pieData = computed(() => {
   }
 })
 
+const statusPieData = computed(() => {
+  let totalAdmitted = 0
+  let totalPending = 0
+  let totalRejected = 0
+
+  selectedCities.value.forEach(city => {
+    const data = cityWiseData[city]
+    totalAdmitted += data.admitted
+    totalPending += data.pending
+    totalRejected += data.rejected
+  })
+
+  return {
+    labels: ['Admitted', 'Pending', 'Rejected'],
+    datasets: [
+      {
+        data: [totalAdmitted, totalPending, totalRejected],
+        backgroundColor: ['#22c55e', '#facc15', '#ef4444']
+      }
+    ]
+  }
+})
+
 const barOptions = {
   responsive: true,
   maintainAspectRatio: false,
@@ -170,14 +193,28 @@ const barOptions = {
       </div>
     </div>
 
-    <!-- 🍩 Pie Chart -->
-    <div class="bg-white p-4 rounded-xl shadow w-full md:w-[60%] mx-auto">
-      <h2 class="text-lg font-bold mb-2 text-center text-gray-800">Gender Summary</h2>
-      <p class="text-sm text-center mb-4 text-gray-600">
-        This pie chart shows the total number of male and female students across the selected cities.
-      </p>
-      <div class="w-full h-64">
-        <Pie :data="pieData" :options="{ responsive: true, maintainAspectRatio: false }" />
+    <!-- 🍩 Gender + Admission Pie Charts Side by Side -->
+    <div class="flex flex-col md:flex-row gap-6 md:gap-8 justify-center">
+      <!-- Gender Pie -->
+      <div class="bg-white p-4 rounded-xl shadow w-full md:w-1/2">
+        <h2 class="text-lg font-bold mb-2 text-center text-gray-800">Gender Summary</h2>
+        <p class="text-sm text-center mb-4 text-gray-600">
+          This pie chart shows the total number of male and female students across the selected cities.
+        </p>
+        <div class="w-full h-64">
+          <Pie :data="pieData" :options="{ responsive: true, maintainAspectRatio: false }" />
+        </div>
+      </div>
+
+      <!-- Admission Pie -->
+      <div class="bg-white p-4 rounded-xl shadow w-full md:w-1/2">
+        <h2 class="text-lg font-bold mb-2 text-center text-gray-800">Admission Summary</h2>
+        <p class="text-sm text-center mb-4 text-gray-600">
+          This pie chart shows total admitted, pending, and rejected students from selected cities.
+        </p>
+        <div class="w-full h-64">
+          <Pie :data="statusPieData" :options="{ responsive: true, maintainAspectRatio: false }" />
+        </div>
       </div>
     </div>
   </div>
