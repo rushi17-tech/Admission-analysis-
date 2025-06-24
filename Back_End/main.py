@@ -21,9 +21,16 @@ async def get_session() -> AsyncSession:
 # ---------- FASTAPI APP ----------
 app = FastAPI()
 
+<<<<<<< HEAD
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
+=======
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"], 
+>>>>>>> 9a0cc1b23f6c0debc922625d56b15c1a440d18a5
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -84,6 +91,7 @@ class EntranceExamSchedule(SQLModel, table=True):
     datetime: datetime
     round_no: int
 
+<<<<<<< HEAD
 # ---------- STARTUP ----------
 @app.on_event("startup")
 async def on_startup():
@@ -112,3 +120,5 @@ async def get_schedules(session: AsyncSession = Depends(get_session)):
             )
         })
     return formatted
+=======
+>>>>>>> 9a0cc1b23f6c0debc922625d56b15c1a440d18a5

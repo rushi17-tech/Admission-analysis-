@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import LoginPage from '../pages/login.vue'
 import SignupPage from '../pages/signup.vue'
 import HomePage from '../components/homepage.vue' // optional
-import wrapbackground from '@/components/wrapbackground.vue'
+// import wrapbackground from '@/components/wrapbackground.vue'
 
 
 
