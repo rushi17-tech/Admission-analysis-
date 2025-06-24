@@ -2,14 +2,14 @@ from datetime import date, datetime
 from enum import Enum
 from typing import List, Optional
 
-from fastapi import FastAPI, Depends
+from fastapi import FastAPI, Depends, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import EmailStr, constr
-from sqlmodel import SQLModel, Field, select, create_engine
+from sqlmodel import SQLModel, Field, select
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
-# ---------- DATABASE SETUP ----------
+# Database setup
 DATABASE_URL = "sqlite+aiosqlite:///./students.db"
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
 async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
@@ -18,25 +18,20 @@ async def get_session() -> AsyncSession:
     async with async_session() as session:
         yield session
 
-# ---------- FASTAPI APP ----------
+# FastAPI app and CORS
 app = FastAPI()
 
-<<<<<<< HEAD
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173"],
-=======
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:5173"], 
->>>>>>> 9a0cc1b23f6c0debc922625d56b15c1a440d18a5
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ---------- ENUMS ----------
+router = APIRouter()
+
+# Enums
 class GenderEnum(str, Enum):
     male = "Male"
     female = "Female"
@@ -47,7 +42,7 @@ class StatusEnum(str, Enum):
     accepted = "Accepted"
     rejected = "Rejected"
 
-# ---------- MODELS ----------
+# Models
 class School(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
@@ -91,24 +86,23 @@ class EntranceExamSchedule(SQLModel, table=True):
     datetime: datetime
     round_no: int
 
-<<<<<<< HEAD
-# ---------- STARTUP ----------
+# Create tables on startup
 @app.on_event("startup")
 async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
 
-# ---------- ROUTES ----------
+# Root route
 @app.post("/")
 def home():
     return {"message": "Welcome to the Student Admission System API"}
 
-@app.get("/api/schedules")
+# Get all entrance exam schedules
+@router.get("/schedules")
 async def get_schedules(session: AsyncSession = Depends(get_session)):
     result = await session.exec(select(EntranceExamSchedule))
     schedules = result.all()
 
-    # Format the output for front-end
     formatted = []
     for s in schedules:
         formatted.append({
@@ -120,5 +114,91 @@ async def get_schedules(session: AsyncSession = Depends(get_session)):
             )
         })
     return formatted
-=======
->>>>>>> 9a0cc1b23f6c0debc922625d56b15c1a440d18a5
+
+# Get all applications 
+@router.get("/applications", response_model=List[dict])
+async def get_all_applications(session: AsyncSession = Depends(get_session)):
+    query = (
+        select(Application, Student, Course)
+        .join(Student, Student.id == Application.student_id)
+        .join(Course, Course.id == Application.course_id)
+    )
+    results = await session.exec(query)
+    rows = results.all()
+
+    return [
+        {
+            "id": app.id,
+            "student_id": app.student_id,
+            "course_id": app.course_id,
+            "application_date": app.application_date,
+            "status": app.status,
+            "student_name": student.full_name,
+            "city": student.city,
+            "gender": student.gender,
+            "score": student.entrance_score,
+            "course_name": course.name
+        }
+        for app, student, course in rows
+    ]
+
+
+app.include_router(router, prefix="/api")
+
+#For Student 
+@router.get("/api/students/accepted")
+async def get_accepted_students(session: AsyncSession = Depends(get_session)):
+    query = (
+        select(
+            Student.id,
+            Student.full_name,
+            Student.city,
+            Student.state,
+            Student.gender,
+            Student.entrance_score,
+            Application.status,
+            Course.name.label("course_name"),
+            School.name.label("school_name")
+        )
+        .join(Application, Student.id == Application.student_id)
+        .join(Course, Application.course_id == Course.id)
+        .join(School, Course.school_id == School.id)
+        .where(Application.status == "Accepted")
+    )
+
+    results = await session.exec(query)
+    students = results.all()
+
+    return [
+        {
+            "id": s.id,
+            "name": s.full_name,
+            "city": s.city,
+            "state": s.state,
+            "gender": s.gender,
+            "score": s.entrance_score,
+            "course": s.course_name,
+            "school": s.school_name
+        }
+        for s in students
+    ]
+
+@router.get("/applications", response_model=list[dict])
+async def get_applications(session: AsyncSession = Depends(get_session)):
+    query = (
+        select(Application, Student.full_name, Course.name)
+        .join(Student, Student.id == Application.student_id)
+        .join(Course, Course.id == Application.course_id)
+    )
+    result = await session.exec(query)
+    records = result.all()
+
+    return [
+        {
+            "application_id": app.id,
+            "student_name": student_name,
+            "course_name": course_name,
+            "status": app.status
+        }
+        for app, student_name, course_name in records
+    ]
