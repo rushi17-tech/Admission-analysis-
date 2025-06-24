@@ -14,8 +14,8 @@ import FlipCard from '@/components/flipcard.vue'
 import AdmissionChart from '@/components/AdmissionChart.vue'
 
 const activeTab = ref('home')
-
-// Dynamic data containers
+const showEnrolled = ref(false)
+const showPending = ref(false)
 const analytics = ref({})
 const students = ref({})
 const applications = ref({})
@@ -32,6 +32,38 @@ watch(activeTab, async (tab) => {
     console.error('API fetch error:', err)
   }
 })
+
+// Mock data
+interface Student {
+  id: number
+  name: string
+  course: string
+}
+
+const enrolledStudents = ref<Student[]>([
+  { id: 1, name: 'Aarav Patel', course: 'B.Tech' },
+  { id: 2, name: 'Meera Shah', course: 'BBA' },
+  { id: 3, name: 'Dev Jangid', course: 'BCA' },
+  { id: 4, name: 'Anjali Verma', course: 'B.Sc' },
+  { id: 5, name: 'Sahil Singh', course: 'B.Com' },
+  { id: 6, name: 'Priya Nair', course: 'BCA' },
+  { id: 7, name: 'Rohit Kumar', course: 'B.Tech' },
+  { id: 8, name: 'Sneha Rao', course: 'BBA' },
+  { id: 9, name: 'Vikas Gupta', course: 'B.Sc' },
+  { id: 10, name: 'Neha Sharma', course: 'B.Com' },
+])
+
+const pendingStudents = ref<Student[]>([
+  { id: 11, name: 'Tanya Joshi', course: 'B.Sc' },
+  { id: 12, name: 'Ravi Mehta', course: 'B.Com' },
+  { id: 13, name: 'Amit Dubey', course: 'BCA' },
+  { id: 14, name: 'Kiran Desai', course: 'B.Tech' },
+])
+
+const verifyStudent = (student: Student) => {
+  enrolledStudents.value.push(student)
+  pendingStudents.value = pendingStudents.value.filter(s => s.id !== student.id)
+}
 </script>
 
 <template>
@@ -90,7 +122,6 @@ watch(activeTab, async (tab) => {
             <span>School</span>
           </NavigationMenuLink>
         </NavigationMenuItem>
-
         
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'settings'" class="menu-item flex items-center space-x-2">
@@ -131,81 +162,119 @@ watch(activeTab, async (tab) => {
       <NavigationMenuViewport class="mt-2 animate-slide-down" />
     </NavigationMenu>
   </div>
+<!-- Content Area -->
+<div class="p-10 h-[calc(100vh-80px)] bg-gray-100 animate-fade-in">
+  <h2 class="text-2xl font-bold mb-6 text-gray-800">Admission Analysis</h2>
 
-  <!-- Content Area -->
-  <div class="p-10 h-[calc(100vh-80px)] bg-gray-100 animate-fade-in">
-    <h2 class="text-2xl font-bold mb-6 text-gray-800">Admission Analysis</h2>
-
+  <!-- HOME + STUDENTS Section -->
+  <div>
     <!-- HOME -->
     <div v-if="activeTab === 'home'">
-      <p class="text-gray-700 mb-4">Welcome to the university dashboard. Select a menu item to begin.</p>
-
+      <p class="text-gray-700 mb-4">
+        Welcome to the university dashboard. Select a menu item to begin.
+      </p>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <!-- existing FlipCards remain untouched here -->
-        <!-- ... -->
+        <!-- Optional dashboard summary cards -->
       </div>
-
-      <!-- 📊 Chart Section -->
       <div class="mt-10">
         <AdmissionChart />
       </div>
     </div>
 
     <!-- STUDENTS -->
-    <div v-if="activeTab === 'students'">
-      <h3 class="section-title">Students Overview</h3>
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="group">
-          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-            <template #default>
-              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
-                <h4 class="text-xl font-semibold text-gray-800">Total Enrolled</h4>
-              </div>
-            </template>
-            <template #back>
-              <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
-                <h4 class="text-xl font-semibold">Details</h4>
-                <p class="mt-2 text-sm text-gray-200 text-center"> A total of 1,850 students are currently enrolled across various courses at our university. This reflects a healthy academic ecosystem with diverse interests and specializations. The steady enrollment growth highlights our reputation for quality education and student satisfaction. Our faculty, infrastructure, and support services are well-equipped to manage and enrich this vibrant student community. Continuous efforts are being made to ensure each student receives an excellent learning experience.</p>
-                </div>
-            </template>
-          </FlipCard>
-        </div>
-        <div class="group">
-          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-            <template #default>
-              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
-                <h4 class="text-xl font-semibold text-gray-800">Pending Verification</h4>
-                </div>
-                </template>
-                <template #back>
-                  <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
-                    <h4 class="text-xl font-semibold">Details</h4>
-                <p class="mt-2 text-sm text-gray-200 text-center">Currently, 72 student applications are awaiting document verification. This step is crucial to ensure authenticity and compliance with admission guidelines. Our team is working diligently to review and verify all submitted documents promptly. Students are advised to regularly check their email or dashboard for updates or requests. Timely verification will help avoid any delays in enrollment or class participation.
-                 </p>
-                </div>
-                </template>
-          </FlipCard>
+    <div v-if="activeTab === 'students'" class="space-y-8">
+      <h3 class="section-title text-2xl font-bold text-gray-800">Students Overview</h3>
 
+     <!-- Cards Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+  <!-- Left Card: Enrolled Students -->
+  <div class="group">
+  <div class="w-[300px] h-[300px] md:w-[350px] md:h-[350px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-md p-4 ml-4">
+    <h4 class="text-xl font-semibold text-gray-800">Total Enrolled</h4>
+    <span class="text-4xl font-bold mt-2 text-blue-600">{{ enrolledStudents.length }}</span>
+    <button @click="showEnrolled = !showEnrolled" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+      {{ showEnrolled ? 'Hide' : 'View' }} Enrolled Students
+    </button>
+  </div>
+</div>
+
+
+  <!-- Right Card: Pending Verification -->
+  <div class="group">
+    <div class="w-[300px] h-[300px] md:w-[350px] md:h-[350px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-md p-4 ml-auto">
+      <h4 class="text-xl font-semibold text-gray-800">Pending Verification</h4>
+      <span class="text-4xl font-bold mt-2 text-yellow-600">{{ pendingStudents.length }}</span>
+      <button @click="showPending = !showPending" class="mt-4 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
+        {{ showPending ? 'Hide' : 'View' }} Pending Students
+      </button>
+    </div>
+  </div>
+
+</div>
+
+      
+      <!-- Enrolled Students Table -->
+      <div v-if="showEnrolled" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+        <div class="relative bg-white rounded-xl shadow-lg w-[90vw] h-[80vh] p-8 flex flex-col">
+          <button @click="showEnrolled = false" class="absolute top-4 right-4 text-gray-700 hover:text-red-600 text-2xl font-bold" aria-label="Close">&times;</button>
+          <h2 class="text-lg font-bold mb-4 text-gray-800">Enrolled Students</h2>
+          <div class="flex-1 overflow-y-auto">
+            <table class="w-full border text-sm text-gray-900">
+              <thead class="bg-gray-100 sticky top-0 text-gray-900">
+                <tr>
+                  <th class="p-2 border">#</th>
+                  <th class="p-2 border">Name</th>
+                  <th class="p-2 border">Course</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(student, index) in enrolledStudents" :key="student.id">
+                  <td class="p-2 border text-center">{{ index + 1 }}</td>
+                  <td class="p-2 border">{{ student.name }}</td>
+                  <td class="p-2 border">{{ student.course }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
-        <div class="group">
-          <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-            <template #default>
-              <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
-                <h4 class="text-xl font-semibold text-gray-800">Drop Out</h4>
-                </div>
-                </template>
-                <template #back>
-                  <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
-                    <h4 class="text-xl font-semibold">Details</h4>
-                <p class="mt-2 text-sm text-gray-200 text-center">A total of 18 students have dropped out during the current academic cycle. These cases may result from personal, academic, or financial challenges faced by the students. Our counseling team actively reaches out to understand and support those at risk. The university is also working on preventive strategies to reduce the dropout rate. Ensuring student well-being and retention remains a top priority for our administration.</p>
-                </div>
-                </template>
-                </FlipCard>
+      </div>
+
+      <!-- Pending Students Table -->
+      <div v-if="showPending" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
+        <div class="relative bg-white rounded-xl shadow-lg w-[90vw] h-[80vh] p-8 flex flex-col">
+          <button @click="showPending = false" class="absolute top-4 right-4 text-gray-700 hover:text-red-600 text-2xl font-bold" aria-label="Close">&times;</button>
+          <h2 class="text-lg font-bold mb-4 text-gray-800">Pending Verification</h2>
+          <div class="flex-1 overflow-y-auto">
+            <table class="w-full border text-sm text-gray-900">
+              <thead class="bg-gray-100 sticky top-0 text-gray-900">
+                <tr>
+                  <th class="p-2 border">#</th>
+                  <th class="p-2 border">Name</th>
+                  <th class="p-2 border">Course</th>
+                  <th class="p-2 border">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(student, index) in pendingStudents" :key="student.id">
+                  <td class="p-2 border text-center">{{ index + 1 }}</td>
+                  <td class="p-2 border">{{ student.name }}</td>
+                  <td class="p-2 border">{{ student.course }}</td>
+                  <td class="p-2 border text-center">
+                    <button @click="verifyStudent(student)" class="bg-green-500 px-3 py-1 text-white rounded hover:bg-green-600">
+                      Verify
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <!-- APPLICATIONS -->
+  <!-- APPLICATIONS -->
     <div v-if="activeTab === 'applications'">
       <h3 class="section-title">Applications</h3>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -318,7 +387,7 @@ watch(activeTab, async (tab) => {
       </div>
     </div>
   </div>
-  </template>
+</template>
 
 <style scoped>
 .menu-item {
