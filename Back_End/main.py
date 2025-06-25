@@ -5,7 +5,8 @@ from typing import List, Optional
 from fastapi import FastAPI, Depends, APIRouter
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import EmailStr, constr
-from sqlmodel import SQLModel, Field, select
+from sqlalchemy import func
+from sqlmodel import SQLModel, Field, select , update
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 
@@ -31,11 +32,12 @@ app.add_middleware(
 
 router = APIRouter()
 
+
 # Enums
 class GenderEnum(str, Enum):
     male = "Male"
     female = "Female"
-    other = "Other"
+   
 
 class StatusEnum(str, Enum):
     pending = "Pending"
@@ -43,42 +45,23 @@ class StatusEnum(str, Enum):
     rejected = "Rejected"
 
 # Models
-class School(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-
 class Course(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
-    school_id: int = Field(foreign_key="school.id")
-    total_students_enrolled: int = 0
-    total_students_waitlisted: int = 0
-    total_students_leave: int = 0
+    school: str 
+    total_students_enrolled: int = Field(default=0, nullable=False)     
+    total_students_waitlisted: int = Field(default=0, nullable=False)   
+    total_students_leave: int = Field(default=0, nullable=False)
 
 class Student(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    full_name: str
+    name: str
     email: EmailStr
-    phone_number: constr(min_length=10, max_length=15)
+    phone_number: int = Field(ge=1000000000, le=9999999999)  
     city: str
     state: str
-    entrance_score: float
     dob: date
     gender: GenderEnum
-    fee: float
-
-class Application(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    student_id: int = Field(foreign_key="student.id")
-    course_id: int = Field(foreign_key="course.id")
-    application_date: date
-    status: StatusEnum = StatusEnum.pending
-
-class Score(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    application_id: int = Field(foreign_key="application.id")
-    score: float
-    test_date: date
 
 class EntranceExamSchedule(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -86,21 +69,78 @@ class EntranceExamSchedule(SQLModel, table=True):
     datetime: datetime
     round_no: int
 
+class Application(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    student_id: int = Field(foreign_key="student.id")
+    course_id: int = Field(foreign_key="course.id")
+    application_date: date
+    status: StatusEnum = StatusEnum.pending
+    exam_id: int = Field(foreign_key="entranceexamschedule.id")
+
+class Score(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    application_id: int = Field(foreign_key="application.id")
+    score: float
+
+
+async def update_course_stats(session: AsyncSession):
+    
+    subquery_enrolled = (
+        select(Application.course_id, func.count().label("count"))
+        .where(Application.status == "Accepted")
+        .group_by(Application.course_id)
+        .subquery()
+    )
+
+    await session.execute(
+        update(Course)
+        .where(Course.id == subquery_enrolled.c.course_id)
+        .values(total_students_enrolled=subquery_enrolled.c.count)
+    )
+
+   
+    subquery_waitlisted = (
+        select(Application.course_id, func.count().label("count"))
+        .where(Application.status == "Pending")
+        .group_by(Application.course_id)
+        .subquery()
+    )
+
+    await session.execute(
+        update(Course)
+        .where(Course.id == subquery_waitlisted.c.course_id)
+        .values(total_students_waitlisted=subquery_waitlisted.c.count)
+    )
+
+    
+    subquery_rejected = (
+        select(Application.course_id, func.count().label("count"))
+        .where(Application.status == "Rejected")
+        .group_by(Application.course_id)
+        .subquery()
+    )
+
+    await session.execute(
+        update(Course)
+        .where(Course.id == subquery_rejected.c.course_id)
+        .values(total_students_leave=subquery_rejected.c.count)
+    )
+
+    await session.commit()
+    
+    
 # Create tables on startup
 @app.on_event("startup")
 async def on_startup():
     async with engine.begin() as conn:
         await conn.run_sync(SQLModel.metadata.create_all)
 
-# Root route
-@app.post("/")
-def home():
-    return {"message": "Welcome to the Student Admission System API"}
 
-# Get all entrance exam schedules
-@router.get("/schedules")
+# Get all entrance exam schedules 
+@router.get("/schedule")
 async def get_schedules(session: AsyncSession = Depends(get_session)):
-    result = await session.exec(select(EntranceExamSchedule))
+    print("Hello from schedule")
+    result = await session.execute(select(EntranceExamSchedule))
     schedules = result.all()
 
     formatted = []
@@ -110,21 +150,23 @@ async def get_schedules(session: AsyncSession = Depends(get_session)):
             "description": (
                 f"The entrance exam is scheduled for <strong>{s.datetime.strftime('%d %B')}</strong>. "
                 f"Report by <strong>{s.datetime.strftime('%I:%M %p')}</strong>. "
-                f"Round <strong>{s.round_no}</strong>. Please carry ID and admit card."
+                f"Round <strong>{s.round_no}</strong>."
             )
         })
     return formatted
 
 # Get all applications 
-@router.get("/applications", response_model=List[dict])
+@router.get("/analytics", response_model=List[dict])
 async def get_all_applications(session: AsyncSession = Depends(get_session)):
+    print("Hello from analytics")
     query = (
         select(Application, Student, Course)
         .join(Student, Student.id == Application.student_id)
         .join(Course, Course.id == Application.course_id)
     )
-    results = await session.exec(query)
+    results = await session.execute(query)
     rows = results.all()
+    
 
     return [
         {
@@ -133,7 +175,7 @@ async def get_all_applications(session: AsyncSession = Depends(get_session)):
             "course_id": app.course_id,
             "application_date": app.application_date,
             "status": app.status,
-            "student_name": student.full_name,
+            "student_name": student.name,
             "city": student.city,
             "gender": student.gender,
             "score": student.entrance_score,
@@ -143,36 +185,36 @@ async def get_all_applications(session: AsyncSession = Depends(get_session)):
     ]
 
 
-app.include_router(router, prefix="/api")
+
 
 #For Student 
-@router.get("/api/students/accepted")
+@router.get("/students/accepted")
 async def get_accepted_students(session: AsyncSession = Depends(get_session)):
     query = (
         select(
             Student.id,
-            Student.full_name,
+            Student.name,
             Student.city,
             Student.state,
             Student.gender,
-            Student.entrance_score,
             Application.status,
             Course.name.label("course_name"),
-            School.name.label("school_name")
+            Course.school.label("school_name"),
+            Score.score.label("score")
         )
         .join(Application, Student.id == Application.student_id)
         .join(Course, Application.course_id == Course.id)
-        .join(School, Course.school_id == School.id)
+        .join(Score, Application.id == Score.application_id)
         .where(Application.status == "Accepted")
     )
 
-    results = await session.exec(query)
+    results = await session.execute(query)
     students = results.all()
 
     return [
         {
             "id": s.id,
-            "name": s.full_name,
+            "name": s.name,
             "city": s.city,
             "state": s.state,
             "gender": s.gender,
@@ -183,14 +225,16 @@ async def get_accepted_students(session: AsyncSession = Depends(get_session)):
         for s in students
     ]
 
+
+# 
 @router.get("/applications", response_model=list[dict])
 async def get_applications(session: AsyncSession = Depends(get_session)):
     query = (
-        select(Application, Student.full_name, Course.name)
+        select(Application, Student.name, Course.name)
         .join(Student, Student.id == Application.student_id)
         .join(Course, Course.id == Application.course_id)
     )
-    result = await session.exec(query)
+    result = await session.execute(query)
     records = result.all()
 
     return [
@@ -202,3 +246,6 @@ async def get_applications(session: AsyncSession = Depends(get_session)):
         }
         for app, student_name, course_name in records
     ]
+    
+
+app.include_router(router)
