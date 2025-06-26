@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, defineComponent } from 'vue'
 import axios from 'axios'
 import {
   NavigationMenu,
@@ -10,6 +10,9 @@ import {
 } from '@/components/ui/navigation-menu'
 import { BarChart, Users, FilePlus2, CalendarDays } from 'lucide-vue-next'
 import FlipCard from '@/components/flipcard.vue'
+import AdmissionCharts from '@/components/AdmissionChart.vue'
+import { useRouter } from 'vue-router'
+import { VueFlip } from 'vue-flip'
 
 interface Student {
   id: number
@@ -45,6 +48,7 @@ const applications = ref<Application[]>([])
 const schedule = ref<ScheduleItem[]>([])
 const enrolledStudents = ref<Student[]>([])
 const pendingStudents = ref<Student[]>([])
+const router = useRouter()
 const BASE_URL = 'http://localhost:8000/api'
 
 // Fetch data when tab changes
@@ -110,7 +114,64 @@ onMounted(async () => {
     await fetchStudentsData()
   }
 })
+
+const getCourseName = (desc: string): string => {
+  // You can customize this if course name is added to description in future
+  return 'Based on Application';
+};
+
+const getExamDate = (desc: string): string => {
+  const match = desc.match(/<strong>(\d{1,2} [A-Za-z]+)<\/strong>/);
+  return match ? match[1] : 'Unknown';
+};
+
+const getReportingTime = (desc: string): string => {
+  const match = desc.match(/<strong>(\d{1,2}:\d{2} [APMapm]{2})<\/strong>/);
+  return match ? match[1] : 'Unknown';
+};
+
+const extractRound = (title: string): string => {
+  const match = title.match(/Round (\d+)/);
+  return match ? match[1] : '?';
+};
+
+function logout() {
+
+   localStorage.removeItem('token')
+   router.push('/login')
+}
+
+const props = defineProps({
+  activeTab: String,
+  applications: {
+    type: Array,
+    default: () => []
+  }
+})
+
+
+
+
+const flippedCard = ref(-1)
+const showModal = ref(false)
+const modalType = ref('')
+
+function flipCard(idx) {
+  flippedCard.value = idx
+  if (idx === -1) {
+    // Reset all flips
+    setTimeout(() => { flippedCard.value = -1 }, 300)
+  }
+}
+function openModal(type) {
+  modalType.value = type
+  showModal.value = true
+}
+
+
+
 </script>
+
 
 <template>
 <!-- Navigation -->
@@ -201,96 +262,149 @@ onMounted(async () => {
   </NavigationMenu>
 </div>
 
-<!-- Content Area -->
-<div class="p-10 h-[calc(100vh-80px)] bg-gray-100 animate-fade-in">
+<!-- ────────── CONTENT AREA ────────── -->
+<div class="p-10 bg-gray-100 min-h-screen overflow-y-auto animate-fade-in">
   <h2 class="text-2xl font-bold mb-6 text-gray-800">Admission Dashboard</h2>
 
-  <!-- HOME Section -->
-  <div v-if="activeTab === 'home'">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <h3 class="text-xl font-semibold mb-4">Total Applications</h3>
-        <p class="text-4xl font-bold text-blue-600">{{ applications.length }}</p>
-      </div>
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <h3 class="text-xl font-semibold mb-4">Enrolled Students</h3>
-        <p class="text-4xl font-bold text-green-600">{{ enrolledStudents.length }}</p>
-      </div>
-      <div class="bg-white rounded-xl shadow-md p-6">
-        <h3 class="text-xl font-semibold mb-4">Pending Verification</h3>
-        <p class="text-4xl font-bold text-yellow-600">{{ pendingStudents.length }}</p>
-      </div>
-    </div>
+   <div v-if="activeTab === 'home'">
+    <section class="p-10 bg-gray-100">
+      <h2 class="text-2xl font-bold mb-6 text-gray-800">Admission Analysis</h2>
+      <AdmissionCharts />
+    </section>
   </div>
 
-  <!-- STUDENTS Section -->
-  <div v-if="activeTab === 'students'" class="space-y-8">
-    <h3 class="section-title text-2xl font-bold text-gray-800">Students Management</h3>
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div class="group">
-        <div class="w-[300px] h-[300px] md:w-[350px] md:h-[350px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-md p-4 ml-4">
-          <h4 class="text-xl font-semibold text-gray-800">Total Enrolled</h4>
-          <span class="text-4xl font-bold mt-2 text-blue-600">{{ enrolledStudents.length }}</span>
-          <button @click="showEnrolled = !showEnrolled" class="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-            {{ showEnrolled ? 'Hide' : 'View' }} Enrolled Students
-          </button>
-        </div>
-      </div>
-      <div class="group">
-        <div class="w-[300px] h-[300px] md:w-[350px] md:h-[350px] flex flex-col items-center justify-center bg-white rounded-2xl shadow-md p-4 ml-auto">
-          <h4 class="text-xl font-semibold text-gray-800">Pending Verification</h4>
-          <span class="text-4xl font-bold mt-2 text-yellow-600">{{ pendingStudents.length }}</span>
-          <button @click="showPending = !showPending" class="mt-4 px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600">
-            {{ showPending ? 'Hide' : 'View' }} Pending Students
-          </button>
-        </div>
-      </div>
+   <!-- ────────── STUDENTS SECTION ────────── -->
+<div v-if="activeTab === 'students'" class="py-8 px-2 md:px-8 bg-gradient-to-br from-slate-900 via-blue-900 to-slate-800 min-h-[80vh]">
+  <h3 class="section-title text-3xl font-extrabold text-white mb-10 tracking-wide flex items-center gap-3">
+    <span class="inline-block bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-pulse">
+      <svg class="w-8 h-8 inline-block mr-2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M12 14l9-5-9-5-9 5 9 5zm0 7v-6m0 0l-9-5m9 5l9-5"/>
+      </svg>
+      Students Management
+    </span>
+  </h3>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+    <!-- Total Enrolled -->
+    <div class="relative group bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-blue-500/30">
+      <span class="absolute top-4 right-4 text-blue-400 drop-shadow-lg">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87M16 3.13a4 4 0 0 1 0 7.75M8 3.13a4 4 0 1 0 0 7.75"/>
+        </svg>
+      </span>
+      <h4 class="text-xl font-bold text-white/90 mb-2">Total Enrolled</h4>
+      <span class="text-5xl font-extrabold text-blue-400 drop-shadow-lg mb-4 animate-pulse">
+        {{ enrolledStudents.length }}
+      </span>
+      <button
+        @click="showEnrolled = !showEnrolled"
+        class="mt-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-full shadow-lg hover:from-blue-700 hover:to-purple-700 transition-all"
+      >
+        <span class="font-semibold tracking-wide">{{ showEnrolled ? 'Hide' : 'View' }} Enrolled</span>
+      </button>
     </div>
-    <div v-if="showEnrolled" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-      <div class="relative bg-white rounded-xl shadow-lg w-[90vw] h-[80vh] p-8 flex flex-col">
-        <button @click="showEnrolled = false" class="absolute top-4 right-4 text-gray-700 hover:text-red-600 text-2xl font-bold" aria-label="Close">&times;</button>
-        <h2 class="text-lg font-bold mb-4 text-gray-800">Enrolled Students</h2>
-        <div class="flex-1 overflow-y-auto">
-          <table class="w-full border text-sm text-gray-900">
-            <thead class="bg-gray-100 sticky top-0 text-gray-900">
+
+    <!-- Pending Verification -->
+    <div class="relative group bg-white/10 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20 p-8 flex flex-col items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-yellow-400/30">
+      <span class="absolute top-4 right-4 text-yellow-400 drop-shadow-lg">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path d="M12 8v4l3 3"/>
+          <circle cx="12" cy="12" r="10"/>
+        </svg>
+      </span>
+      <h4 class="text-xl font-bold text-white/90 mb-2">Pending Verification</h4>
+      <span class="text-5xl font-extrabold text-yellow-400 drop-shadow-lg mb-4 animate-pulse">
+        {{ pendingStudents.length }}
+      </span>
+      <button
+        @click="showPending = !showPending"
+        class="mt-2 px-6 py-2 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-full shadow-lg hover:from-yellow-600 hover:to-orange-600 transition-all"
+      >
+        <span class="font-semibold tracking-wide">{{ showPending ? 'Hide' : 'View' }} Pending</span>
+      </button>
+    </div>
+    
+  </div>
+
+  <!-- Enrolled Modal -->
+  <transition name="fade">
+    <div
+      v-if="showEnrolled"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+    >
+      <div class="relative bg-white/90 rounded-2xl shadow-2xl w-[90vw] max-w-4xl h-[80vh] p-8 flex flex-col border border-blue-200/50">
+        <button
+          @click="showEnrolled = false"
+          class="absolute top-4 right-4 text-gray-700 hover:text-red-600 text-3xl font-bold"
+          aria-label="Close"
+        >&times;</button>
+        <h2 class="text-2xl font-bold mb-6 text-blue-900 flex items-center gap-2">
+          <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M17 20h5v-2a4 4 0 0 0-3-3.87M9 20H4v-2a4 4 0 0 1 3-3.87"/>
+          </svg>
+          Enrolled Students
+        </h2>
+        <div class="flex-1 overflow-y-auto rounded-xl border border-blue-100/50 bg-white/70">
+          <table class="w-full text-sm text-gray-900">
+            <thead class="bg-blue-50 sticky top-0 text-blue-900">
               <tr>
-                <th class="p-2 border">#</th>
-                <th class="p-2 border">Name</th>
-                <th class="p-2 border">Course</th>
+                <th class="p-3 border-b">#</th>
+                <th class="p-3 border-b">Name</th>
+                <th class="p-3 border-b">Course</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(student, index) in enrolledStudents" :key="student.id">
-                <td class="p-2 border text-center">{{ index + 1 }}</td>
-                <td class="p-2 border">{{ student.name }}</td>
-                <td class="p-2 border">{{ student.course }}</td>
+              <tr v-for="(student, index) in enrolledStudents" :key="student.id" class="hover:bg-blue-100/70 transition">
+                <td class="p-3 text-center">{{ index + 1 }}</td>
+                <td class="p-3">{{ student.name }}</td>
+                <td class="p-3">{{ student.course }}</td>
               </tr>
             </tbody>
           </table>
         </div>
       </div>
     </div>
-    <div v-if="showPending" class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-30">
-      <div class="relative bg-white rounded-xl shadow-lg w-[90vw] h-[80vh] p-8 flex flex-col">
-        <button @click="showPending = false" class="absolute top-4 right-4 text-gray-7 hover:text-red-600 text-2xl font-bold" aria-label="Close">&times;</button>
-        <h2 class="text-lg font-bold mb-4 text-gray-800">Pending Verification</h2>
-        <div class="flex-1 overflow-y-auto">
-          <table class="w-full border text-sm text-gray-900">
-            <thead class="bg-gray-100 sticky top-0 text-gray-900">
+  </transition>
+
+  <!-- Pending Modal -->
+  <transition name="fade">
+    <div
+      v-if="showPending"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+    >
+      <div class="relative bg-white/90 rounded-2xl shadow-2xl w-[90vw] max-w-4xl h-[80vh] p-8 flex flex-col border border-yellow-200/50">
+        <button
+          @click="showPending = false"
+          class="absolute top-4 right-4 text-gray-700 hover:text-red-600 text-3xl font-bold"
+          aria-label="Close"
+        >&times;</button>
+        <h2 class="text-2xl font-bold mb-6 text-yellow-700 flex items-center gap-2">
+          <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path d="M12 8v4l3 3"/>
+            <circle cx="12" cy="12" r="10"/>
+          </svg>
+          Pending Verification
+        </h2>
+        <div class="flex-1 overflow-y-auto rounded-xl border border-yellow-100/50 bg-white/70">
+          <table class="w-full text-sm text-gray-900">
+            <thead class="bg-yellow-50 sticky top-0 text-yellow-900">
               <tr>
-                <th class="p-2 border">#</th>
-                <th class="p-2 border">Name</th>
-                <th class="p-2 border">Course</th>
-                <th class="p-2 border">Action</th>
+                <th class="p-3 border-b">#</th>
+                <th class="p-3 border-b">Name</th>
+                <th class="p-3 border-b">Course</th>
+                <th class="p-3 border-b">Action</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(student, index) in pendingStudents" :key="student.id">
-                <td class="p-2 border text-center">{{ index + 1 }}</td>
-                <td class="p-2 border">{{ student.name }}</td>
-                <td class="p-2 border">{{ student.course }}</td>
-                <td class="p-2 border text-center">
-                  <button @click="verifyStudent(student)" class="bg-green-500 px-3 py-1 text-white rounded hover:bg-green-600">
+              <tr v-for="(student, index) in pendingStudents" :key="student.id" class="hover:bg-yellow-100/70 transition">
+                <td class="p-3 text-center">{{ index + 1 }}</td>
+                <td class="p-3">{{ student.name }}</td>
+                <td class="p-3">{{ student.course }}</td>
+                <td class="p-3 text-center">
+                  <button
+                    @click="verifyStudent(student)"
+                    class="bg-gradient-to-r from-green-500 to-green-700 px-4 py-1 text-white rounded-full hover:from-green-600 hover:to-green-800 transition-all"
+                  >
                     Verify
                   </button>
                 </td>
@@ -300,113 +414,428 @@ onMounted(async () => {
         </div>
       </div>
     </div>
-  </div>
+  </transition>
+</div>
 
-  <!-- APPLICATIONS Section -->
-  <div v-if="activeTab === 'applications'">
-    <h3 class="text-2xl font-bold mb-6 text-gray-800">Applications Overview</h3>
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div class="group">
-        <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-          <template #default>
-            <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
-              <h4 class="text-xl font-semibold text-gray-800">New Applications</h4>
-              <span class="text-4xl font-bold mt-2 text-blue-600">{{ applications.length }}</span>
-            </div>
-          </template>
-          <template #back>
-            <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
-              <h4 class="text-xl font-semibold">Details</h4>
-              <p class="mt-2 text-sm text-gray-200 text-center">
-                A total of {{ applications.length }} applications have been received.
-                This indicates steady interest in our academic programs.
-              </p>
-            </div>
-          </template>
-        </FlipCard>
+<!-- ────────── APPLICATIONS SECTION ────────── -->
+     <div v-if="activeTab === 'applications'" class="p-6 futuristic-bg min-h-screen">
+    <h3 class="text-4xl font-extrabold mb-10 text-white tracking-wide flex items-center gap-3 neon-text">
+      <svg class="w-10 h-10 text-cyan-400 animate-pulse" fill="none" stroke="currentColor" stroke-width="2"
+        viewBox="0 0 24 24"><path d="M12 4v16m8-8H4"></path></svg>
+      Applications Overview
+    </h3>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-10">
+      <!-- Card: New Applications -->
+      <div class="relative perspective-1000 mx-auto" style="width:340px; height:400px;">
+        <div
+          class="flip-card"
+          :class="{ flipped: flippedCard === 0 }"
+        >
+          <!-- FRONT -->
+          <div class="flip-card-front glassmorphic-card border-cyan-400 shadow-cyan-400/40">
+            <svg class="w-12 h-12 text-cyan-400 mb-3" fill="none" stroke="currentColor" stroke-width="2"
+              viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 00-3-3.87M6 21v-2a4 4 0 013-3.87m6-7a4 4 0 11-8 0 4 4 0 018 0zm6 4v6m3-3h-6"></path></svg>
+            <h4 class="text-2xl font-bold neon-text mb-2">New Applications</h4>
+            <span class="text-6xl font-extrabold mb-4 neon-text-cyan">{{ applications.length }}</span>
+            <button
+              class="mt-4 px-6 py-2 bg-gradient-to-r from-white/10 to-white/30 border border-white/20 rounded-full neon-border shadow hover:scale-105 transition"
+              @click="flipCard(0)"
+            >
+              Show Details
+            </button>
+          </div>
+          <!-- BACK -->
+          <div class="flip-card-back glassmorphic-card border-cyan-400 shadow-cyan-400/40">
+            <h4 class="text-xl font-semibold neon-text mb-2">Details</h4>
+            <ul class="text-base text-white/90 text-center space-y-1 mb-4">
+              <li>A total of <b>{{ applications.length }}</b> applications have been received.</li>
+              <li>Interest in our programs remains high.</li>
+              <li>All applications are currently under initial review.</li>
+            </ul>
+            <button
+              class="mt-2 px-6 py-2 bg-gradient-to-r from-white/10 to-white/30 border border-white/20 rounded-full neon-border shadow hover:scale-105 transition"
+              @click="flipCard(-1)"
+            >
+              Back
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="group">
-        <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-          <template #default>
-            <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
-              <h4 class="text-xl font-semibold text-gray-800">Documents Pending</h4>
-              <span class="text-4xl font-bold mt-2 text-yellow-600">21</span>
-            </div>
-          </template>
-          <template #back>
-            <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
-              <h4 class="text-xl font-semibold">Details</h4>
-              <p class="mt-2 text-sm text-gray-200 text-center">
-                21 applications require additional documentation.
-                Follow up with applicants to complete their submissions.
-              </p>
-            </div>
-          </template>
-        </FlipCard>
+
+      <!-- Card: Documents Pending -->
+      <div class="relative perspective-1000 mx-auto" style="width:340px; height:400px;">
+        <div
+          class="flip-card"
+          :class="{ flipped: flippedCard === 1 }"
+        >
+          <!-- FRONT -->
+          <div class="flip-card-front glassmorphic-card border-amber-400 shadow-amber-400/40">
+            <svg class="w-12 h-12 text-amber-400 mb-3" fill="none" stroke="currentColor" stroke-width="2"
+              viewBox="0 0 24 24"><path d="M7 7h10M7 11h10M7 15h6M5 19h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            <h4 class="text-2xl font-bold neon-text mb-2">Documents Pending</h4>
+            <span class="text-6xl font-extrabold mb-4 neon-text-amber">21</span>
+            <button
+              class="mt-4 px-6 py-2 bg-gradient-to-r from-white/10 to-white/30 border border-white/20 rounded-full neon-border shadow hover:scale-105 transition"
+              @click="flipCard(1)"
+            >
+              Show Details
+            </button>
+          </div>
+          <!-- BACK -->
+          <div class="flip-card-back glassmorphic-card border-amber-400 shadow-amber-400/40">
+            <h4 class="text-xl font-semibold neon-text mb-2">Details</h4>
+            <ul class="text-base text-white/90 text-center space-y-1 mb-4">
+              <li>21 applications require additional documentation.</li>
+              <li>Most common reasons:</li>
+              <li>- <b>Missing transcripts</b> (12)</li>
+              <li>- <b>Unverified ID proofs</b> (5)</li>
+              <li>- <b>Incomplete application forms</b> (4)</li>
+              <li>Applicants have been notified via email and SMS.</li>
+            </ul>
+            <button
+              class="mb-2 px-5 py-1 bg-gradient-to-r from-white/10 to-white/30 border border-white/20 rounded-full neon-border shadow hover:scale-105 transition"
+              @click="openModal('pending')"
+            >
+              View More
+            </button>
+            <button
+              class="mt-2 px-6 py-2 bg-gradient-to-r from-white/10 to-white/30 border border-white/20 rounded-full neon-border shadow hover:scale-105 transition"
+              @click="flipCard(-1)"
+            >
+              Back
+            </button>
+          </div>
+        </div>
       </div>
-      <div class="group">
-        <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
-          <template #default>
-            <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
-              <h4 class="text-xl font-semibold text-gray-800">Rejected Applications</h4>
-              <span class="text-4xl font-bold mt-2 text-red-600">8</span>
-            </div>
+
+      <!-- Card: Rejected Applications -->
+      <div class="relative perspective-1000 mx-auto" style="width:340px; height:400px;">
+        <div
+          class="flip-card"
+          :class="{ flipped: flippedCard === 2 }"
+        >
+          <!-- FRONT -->
+          <div class="flip-card-front glassmorphic-card border-rose-400 shadow-rose-400/40">
+            <svg class="w-12 h-12 text-rose-400 mb-3" fill="none" stroke="currentColor" stroke-width="2"
+              viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="4" y1="4" x2="20" y2="20"/></svg>
+            <h4 class="text-2xl font-bold neon-text mb-2">Rejected Applications</h4>
+            <span class="text-6xl font-extrabold mb-4 neon-text-rose">8</span>
+            <button
+              class="mt-4 px-6 py-2 bg-gradient-to-r from-white/10 to-white/30 border border-white/20 rounded-full neon-border shadow hover:scale-105 transition"
+              @click="flipCard(2)"
+            >
+              Show Details
+            </button>
+          </div>
+          <!-- BACK -->
+          <div class="flip-card-back glassmorphic-card border-rose-400 shadow-rose-400/40">
+            <h4 class="text-xl font-semibold neon-text mb-2">Details</h4>
+            <ul class="text-base text-white/90 text-center space-y-1 mb-4">
+              <li>8 applications have been rejected.</li>
+              <li>Top rejection reasons:</li>
+              <li>- <b>Did not meet eligibility criteria</b> (5)</li>
+              <li>- <b>Late submission</b> (2)</li>
+              <li>- <b>Invalid documents</b> (1)</li>
+              <li>Applicants have been notified with feedback.</li>
+            </ul>
+            <button
+              class="mb-2 px-5 py-1 bg-gradient-to-r from-white/10 to-white/30 border border-white/20 rounded-full neon-border shadow hover:scale-105 transition"
+              @click="openModal('rejected')"
+            >
+              View More
+            </button>
+            <button
+              class="mt-2 px-6 py-2 bg-gradient-to-r from-white/10 to-white/30 border border-white/20 rounded-full neon-border shadow hover:scale-105 transition"
+              @click="flipCard(-1)"
+            >
+              Back
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL FOR MORE DETAILS -->
+    <div
+      v-if="showModal"
+      class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur"
+    >
+      <div class="bg-gradient-to-br from-gray-900/90 to-gray-800/80 border-2 border-white/10 rounded-2xl p-8 shadow-2xl w-full max-w-md">
+        <h4 class="text-2xl font-bold neon-text mb-4">Detailed Reasons</h4>
+        <ul class="space-y-3">
+          <template v-if="modalType === 'pending'">
+            <li class="flex flex-col bg-white/10 p-3 rounded-lg neon-border">
+              <span class="font-semibold text-lg neon-text">Missing Transcripts</span>
+              <span class="text-sm text-white/70">Count: 12</span>
+              <span class="text-xs text-cyan-200">Awaiting upload from applicant.</span>
+            </li>
+            <li class="flex flex-col bg-white/10 p-3 rounded-lg neon-border">
+              <span class="font-semibold text-lg neon-text">Unverified ID Proofs</span>
+              <span class="text-sm text-white/70">Count: 5</span>
+              <span class="text-xs text-cyan-200">Verification in progress.</span>
+            </li>
+            <li class="flex flex-col bg-white/10 p-3 rounded-lg neon-border">
+              <span class="font-semibold text-lg neon-text">Incomplete Forms</span>
+              <span class="text-sm text-white/70">Count: 4</span>
+              <span class="text-xs text-cyan-200">Applicants need to fill all required fields.</span>
+            </li>
           </template>
-          <template #back>
-            <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
-              <h4 class="text-xl font-semibold">Details</h4>
-              <p class="mt-2 text-sm text-gray-200 text-center">
-                8 applications were rejected due to eligibility criteria.
-                Review rejection reasons for process improvements.
-              </p>
-            </div>
+          <template v-else>
+            <li class="flex flex-col bg-white/10 p-3 rounded-lg neon-border">
+              <span class="font-semibold text-lg neon-text">Eligibility Not Met</span>
+              <span class="text-sm text-white/70">Count: 5</span>
+              <span class="text-xs text-cyan-200">Did not meet minimum academic requirements.</span>
+            </li>
+            <li class="flex flex-col bg-white/10 p-3 rounded-lg neon-border">
+              <span class="font-semibold text-lg neon-text">Late Submission</span>
+              <span class="text-sm text-white/70">Count: 2</span>
+              <span class="text-xs text-cyan-200">Applications received after deadline.</span>
+            </li>
+            <li class="flex flex-col bg-white/10 p-3 rounded-lg neon-border">
+              <span class="font-semibold text-lg neon-text">Invalid Documents</span>
+              <span class="text-sm text-white/70">Count: 1</span>
+              <span class="text-xs text-cyan-200">Submitted documents could not be verified.</span>
+            </li>
           </template>
-        </FlipCard>
+        </ul>
+        <button
+          class="mt-6 px-6 py-2 bg-gradient-to-r from-cyan-400 to-cyan-700 text-white rounded-full shadow hover:scale-105 transition"
+          @click="showModal = false"
+        >
+          Close
+        </button>
       </div>
     </div>
   </div>
+   
+<!-- ────────── SCHEDULE SECTION ────────── -->
+<div v-if="activeTab === 'schedule'" class="p-6 space-y-6">
+  <h3 class="text-2xl font-bold text-gray-800 mb-4">Entrance Exam Schedule</h3>
 
-  <!-- SCHEDULE Section -->
-  <div v-if="activeTab === 'schedule'">
-    <h3 class="text-2xl font-bold mb-6 text-gray-800">Entrance Exam Schedule</h3>
-    <div class="bg-white rounded-xl shadow-md p-6">
-      <div v-for="(event, index) in schedule" :key="index" class="mb-4 p-4 border-b">
-        <h4 class="text-lg font-semibold">{{ event.title }}</h4>
-        <div class="mt-2" v-html="event.description"></div>
-      </div>
-    </div>
-  </div>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-  <!-- ANALYTICS Section -->
-  <div v-if="activeTab === 'analytics'">
-    <h3 class="text-2xl font-bold mb-6 text-gray-800">Admission Analytics</h3>
-    <div class="bg-white rounded-xl shadow-md p-6 overflow-x-auto">
-      <table class="w-full border text-sm text-gray-900">
-        <thead class="bg-gray-100 text-gray-900">
-          <tr>
-            <th class="p-2 border">ID</th>
-            <th class="p-2 border">Student</th>
-            <th class="p-2 border">Course</th>
-            <th class="p-2 border">Status</th>
-            <th class="p-2 border">Score</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="item in analytics" :key="item.id">
-            <td class="p-2 border text-center">{{ item.id }}</td>
-            <td class="p-2 border">{{ item.student_name }}</td>
-            <td class="p-2 border">{{ item.course_name }}</td>
-            <td class="p-2 border">{{ item.status }}</td>
-            <td class="p-2 border">{{ item.score || 'N/A' }}</td>
-          </tr>
-        </tbody>
-      </table>
+    <!-- BCA Entrance -->
+    <div class="group">
+      <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+        <template #default>
+          <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+            <h4 class="text-xl font-semibold text-gray-800">BCA Entrance Test</h4>
+            <span class="text-4xl font-bold mt-2 text-blue-600">120</span>
+          </div>
+        </template>
+        <template #back>
+          <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+            <h4 class="text-xl font-semibold">Details</h4>
+            <p class="mt-2 text-sm text-gray-200 text-center">
+              📚 Course: BCA<br />
+              📅 Date: 5th July 2025<br />
+              ⏰ Time: 9:00 AM<br />
+              🏫 Room No: A101<br />
+              🔁 Round: 1
+            </p>
+          </div>
+        </template>
+      </FlipCard>
     </div>
+
+    <!-- BBA Entrance -->
+    <div class="group">
+      <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+        <template #default>
+          <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+            <h4 class="text-xl font-semibold text-gray-800">BBA Entrance Test</h4>
+            <span class="text-4xl font-bold mt-2 text-green-600">90</span>
+          </div>
+        </template>
+        <template #back>
+          <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+            <h4 class="text-xl font-semibold">Details</h4>
+            <p class="mt-2 text-sm text-gray-200 text-center">
+              📚 Course: BBA<br />
+              📅 Date: 6th July 2025<br />
+              ⏰ Time: 10:30 AM<br />
+              🏫 Room No: B203<br />
+              🔁 Round: 1
+            </p>
+          </div>
+        </template>
+      </FlipCard>
+    </div>
+
+    <!-- B.Tech Entrance -->
+    <div class="group">
+      <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+        <template #default>
+          <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+            <h4 class="text-xl font-semibold text-gray-800">B.Tech Entrance Test</h4>
+            <span class="text-4xl font-bold mt-2 text-red-600">150</span>
+          </div>
+        </template>
+        <template #back>
+          <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+            <h4 class="text-xl font-semibold">Details</h4>
+            <p class="mt-2 text-sm text-gray-200 text-center">
+              📚 Course: B.Tech<br />
+              📅 Date: 7th July 2025<br />
+              ⏰ Time: 11:00 AM<br />
+              🏫 Room No: C307<br />
+              🔁 Round: 1
+            </p>
+          </div>
+        </template>
+      </FlipCard>
+    </div>
+
+    <!-- MBA Entrance -->
+    <div class="group">
+      <FlipCard class="mx-auto w-[300px] h-[300px] md:w-[350px] md:h-[350px]">
+        <template #default>
+          <div class="flex flex-col items-center justify-center h-full bg-white rounded-2xl shadow-md p-4">
+            <h4 class="text-xl font-semibold text-gray-800">MBA Entrance Test</h4>
+            <span class="text-4xl font-bold mt-2 text-purple-600">70</span>
+          </div>
+        </template>
+        <template #back>
+          <div class="flex flex-col items-center justify-center h-full bg-black text-white rounded-2xl p-4">
+            <h4 class="text-xl font-semibold">Details</h4>
+            <p class="mt-2 text-sm text-gray-200 text-center">
+              📚 Course: MBA<br />
+              📅 Date: 8th July 2025<br />
+              ⏰ Time: 1:00 PM<br />
+              🏫 Room No: D102<br />
+              🔁 Round: 2
+            </p>
+          </div>
+        </template>
+      </FlipCard>
+    </div>
+
   </div>
 </div>
+
+
+    <!-- ────────── ANALYTICS SECTION ────────── -->
+    <div v-if="activeTab === 'analytics'">
+      <h3 class="text-2xl font-bold mb-6 text-gray-800">
+        Admission Analytics
+      </h3>
+      <div class="bg-white rounded-xl shadow-md p-6 overflow-x-auto">
+        <table class="w-full border text-sm text-gray-900">
+          <thead class="bg-gray-100 text-gray-900">
+            <tr>
+              <th class="p-2 border">ID</th>
+              <th class="p-2 border">Student</th>
+              <th class="p-2 border">Course</th>
+              <th class="p-2 border">Status</th>
+              <th class="p-2 border">Score</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="item in analytics" :key="item.id">
+              <td class="p-2 border text-center">{{ item.id }}</td>
+              <td class="p-2 border">{{ item.student_name }}</td>
+              <td class="p-2 border">{{ item.course_name }}</td>
+              <td class="p-2 border">{{ item.status }}</td>
+              <td class="p-2 border">{{ item.score || 'N/A' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ────────── SETTINGS SECTION ────────── -->
+<!-- ────────── SETTINGS SECTION ────────── -->
+<div v-if="activeTab === 'settings'" class="p-6 space-y-6">
+  <h3 class="text-2xl font-bold mb-6 text-gray-800">Settings</h3>
+
+  <div class="bg-white rounded-xl shadow-md p-6 max-w-sm">
+    <!-- ⚙️  Settings Item -->
+    <button
+      @click="logout"
+      class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition"
+    >
+      🔒 Logout
+    </button>
+  </div>
+</div>
+
+
+  </div>
 </template>
 
 <style scoped>
+
+.futuristic-bg {
+  background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
+  min-height: 100vh;
+}
+.glassmorphic-card {
+  background: linear-gradient(135deg, rgba(255,255,255,0.07), rgba(0,255,255,0.08));
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  border-radius: 30px;
+  border: 2px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(8px);
+  width: 100%;
+  height: 100%;
+  padding: 2.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0; left: 0;
+  backface-visibility: hidden;
+  transition: box-shadow 0.3s;
+}
+.perspective-1000 {
+  perspective: 1000px;
+}
+.flip-card {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.7s cubic-bezier(.4,2.3,.3,1);
+}
+.flip-card-front {
+  z-index: 2;
+}
+.flip-card-back {
+  transform: rotateY(180deg);
+  z-index: 1;
+}
+.flip-card.flipped {
+  transform: rotateY(180deg);
+}
+.neon-text {
+  text-shadow: 0 0 8px #00fff7, 0 0 2px #fff;
+}
+.neon-text-cyan {
+  color: #00fff7;
+  text-shadow: 0 0 10px #00fff7, 0 0 2px #fff;
+}
+.neon-text-amber {
+  color: #ffc107;
+  text-shadow: 0 0 10px #ffc107, 0 0 2px #fff;
+}
+.neon-text-rose {
+  color: #ff007a;
+  text-shadow: 0 0 10px #ff007a, 0 0 2px #fff;
+}
+.neon-border {
+  box-shadow: 0 0 8px #00fff7, 0 0 2px #fff;
+}
+
+.shadow-xl {
+  box-shadow: 0 10px 25px rgba(30, 64, 175, 0.15), 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
 .menu-item {
   @apply flex items-center space-x-2 transition-all duration-300 hover:text-yellow-300 hover:scale-105 hover:drop-shadow-lg;
 }
