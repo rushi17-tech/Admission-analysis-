@@ -1,10 +1,11 @@
+from collections.abc import AsyncGenerator
 from datetime import date, datetime
 from enum import Enum
 from typing import List, Optional
-
-from fastapi import FastAPI, Depends, APIRouter
+from passlib.context import CryptContext
+from fastapi import FastAPI, Depends, APIRouter, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import EmailStr, constr
+from pydantic import BaseModel, EmailStr, constr
 from sqlalchemy import func
 from sqlmodel import SQLModel, Field, select , update
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -13,9 +14,9 @@ from sqlalchemy.orm import sessionmaker
 # Database setup
 DATABASE_URL = "sqlite+aiosqlite:///./students.db"
 engine = create_async_engine(DATABASE_URL, echo=True, future=True)
-async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+async_session = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False) 
 
-async def get_session() -> AsyncSession:
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session() as session:
         yield session
 
@@ -45,6 +46,14 @@ class StatusEnum(str, Enum):
     rejected = "Rejected"
 
 # Models
+class User(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: EmailStr = Field(index=True, unique=True)
+    password_hash: str
+    
+
+
+
 class Course(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
@@ -81,6 +90,25 @@ class Score(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     application_id: int = Field(foreign_key="application.id")
     score: float
+    
+    
+class SignupRequest(BaseModel):
+    email: EmailStr
+    password: str
+    
+class LoginRequest(BaseModel):
+    email: EmailStr
+    password: str
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+def hash_password(password: str):
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str):
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 async def update_course_stats(session: AsyncSession):
@@ -247,5 +275,32 @@ async def get_applications(session: AsyncSession = Depends(get_session)):
         for app, student_name, course_name in records
     ]
     
+
+
+@router.post("/signup")
+async def signup(data: SignupRequest, session: AsyncSession = Depends(get_session)):
+    # Check if user already exists
+    existing = await session.execute(select(User).where(User.email == data.email))
+    if existing.first():
+        raise HTTPException(status_code=400, detail="User already exists")
+
+    new_user = User(email=data.email, password_hash=hash_password(data.password))
+    session.add(new_user)
+    await session.commit()
+    return {"message": "Signup successful"}
+    
+    
+@router.post("/login")
+async def login(data: LoginRequest, session: AsyncSession = Depends(get_session)):
+    result = await session.execute(
+        select(User).where(User.email == data.email)
+    )
+    user = result.scalar_one_or_none()
+
+    if user is None or not verify_password(data.password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    return {"message": "Login successful", "user_id": user.id}
+
 
 app.include_router(router)
