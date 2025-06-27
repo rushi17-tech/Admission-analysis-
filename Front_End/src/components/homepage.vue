@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, watch, onMounted, defineComponent } from 'vue'
+/* ───────────────────────── Imports ───────────────────────── */
+import { ref, computed, watch, onMounted } from 'vue'
 import axios from 'axios'
 import {
   NavigationMenu,
@@ -14,25 +15,36 @@ import AdmissionCharts from '@/components/AdmissionChart.vue'
 import { useRouter } from 'vue-router'
 import { VueFlip } from 'vue-flip'
 
+/* ───────────────────────── Types ─────────────────────────── */
 interface Student {
   id: number
   name: string
+  city: string
+  state: string
+  gender: string
+  score: number
   course: string
+  school: string
 }
 
 interface Application {
   application_id: number
-  student_name: string
-  course_name: string
-  status: string
+  student_name : string
+  course_name  : string
+  status       : string
 }
 
-interface AnalyticsItem {
+interface AnalyticsRow {
   id: number
-  student_name: string
-  course_name: string
+  student_id: number
+  course_id: number
+  application_date: string
   status: string
-  score?: number
+  student_name: string
+  city: string
+  gender: string
+  score: number | null
+  course_name: string
 }
 
 interface ScheduleItem {
@@ -40,137 +52,197 @@ interface ScheduleItem {
   description: string
 }
 
-const activeTab = ref('home')
-const showEnrolled = ref(false)
-const showPending = ref(false)
-const analytics = ref<AnalyticsItem[]>([])
-const applications = ref<Application[]>([])
-const schedule = ref<ScheduleItem[]>([])
-const enrolledStudents = ref<Student[]>([])
-const pendingStudents = ref<Student[]>([])
-const router = useRouter()
+/* ───────────────────────── Constants ─────────────────────── */
 const BASE_URL = 'http://localhost:8000/api'
+const router   = useRouter()
 
-// Fetch data when tab changes
-watch(activeTab, async (tab) => {
-  try {
-    if (tab === 'students') {
-      await fetchStudentsData()
-    } else if (tab === 'applications') {
-      const res = await axios.get<Application[]>(`${BASE_URL}/applications`)
-      applications.value = res.data
-    } else if (tab === 'schedule') {
-      const res = await axios.get<ScheduleItem[]>(`${BASE_URL}/schedule`)
-      schedule.value = res.data
-    } else if (tab === 'analytics') {
-      const res = await axios.get<AnalyticsItem[]>(`${BASE_URL}/analytics`)
-      analytics.value = res.data
-    }
-  } catch (err) {
-    console.error('API fetch error:', err)
-  }
+/* ───────────────────────── Tabs & State ──────────────────── */
+const activeTab = ref<'home' | 'students' | 'applications' | 'schedule' | 'analytics'>('home')
+
+/*— Students —*/
+const allEnrolled    = ref<Student[]>([])
+const allPending     = ref<Student[]>([])
+const searchText     = ref('')           // shared (students & apps)
+const selectedCourse = ref('')
+
+/*— Applications —*/
+const applications   = ref<Application[]>([])
+const selectedStatus = ref('')           // '', Pending, Docs Pending…
+
+/*— Schedule —*/
+const schedule       = ref<ScheduleItem[]>([])
+const scheduleSearch = ref('')
+const filteredSchedule = computed(() => {
+  const q = scheduleSearch.value.trim().toLowerCase()
+  if (!q) return schedule.value
+  return schedule.value.filter(
+    s => s.title.toLowerCase().includes(q) ||
+         s.description.toLowerCase().includes(q)
+  )
 })
 
-// Fetch student data
-async function fetchStudentsData() {
-  try {
-    // Fetch enrolled students
-    const enrolledRes = await axios.get<{ id: number; name: string; course: string }[]>(`${BASE_URL}/students/accepted`)
-    enrolledStudents.value = enrolledRes.data.map(s => ({
-      id: s.id,
-      name: s.name,
-      course: s.course
-    }))
+/*— Analytics (NEW) —*/
+const analyticsData          = ref<AnalyticsRow[]>([])  // raw from API
+const analyticsSearch        = ref('')                  // free-text
+const analyticsCourseFilter  = ref('')                  // exact course
+const analyticsStatusFilter  = ref('')                  // exact status
 
-    // Fetch pending applications
+const analytics = computed(() => {
+  return analyticsData.value.filter(row => {
+    const matchesSearch =
+      !analyticsSearch.value ||
+      row.student_name.toLowerCase().includes(analyticsSearch.value.toLowerCase()) ||
+      row.course_name  .toLowerCase().includes(analyticsSearch.value.toLowerCase())
+
+    const matchesCourse =
+      !analyticsCourseFilter.value || row.course_name === analyticsCourseFilter.value
+
+    const matchesStatus =
+      !analyticsStatusFilter.value || row.status === analyticsStatusFilter.value
+
+    return matchesSearch && matchesCourse && matchesStatus
+  })
+})
+
+/*— Flip-card helpers —*/
+const flippedCard = ref(-1)
+const showModal   = ref(false)
+const modalType   = ref('')
+
+/* ───────────────────────── Computed ───────────────────────── */
+/* Students */
+function passFilters (s: Student) {
+  const matchesSearch =
+    !searchText.value ||
+    s.name .toLowerCase().includes(searchText.value.toLowerCase()) ||
+    s.city .toLowerCase().includes(searchText.value.toLowerCase()) ||
+    s.state.toLowerCase().includes(searchText.value.toLowerCase())
+
+  const matchesCourse =
+    !selectedCourse.value || s.course === selectedCourse.value
+
+  return matchesSearch && matchesCourse
+}
+const enrolledStudents = computed(() => allEnrolled.value.filter(passFilters))
+const pendingStudents  = computed(() => allPending.value .filter(passFilters))
+
+const courseOptions = computed(() => {
+  const set = new Set<string>()
+  ;[...allEnrolled.value, ...allPending.value].forEach(s => set.add(s.course))
+  return [...set]
+})
+
+/* Applications */
+const filteredApplications = computed(() =>
+  applications.value.filter(app => {
+    const matchesSearch =
+      !searchText.value ||
+      app.student_name.toLowerCase().includes(searchText.value.toLowerCase()) ||
+      app.course_name .toLowerCase().includes(searchText.value.toLowerCase())
+
+    const matchesStatus =
+      !selectedStatus.value || app.status === selectedStatus.value
+
+    return matchesSearch && matchesStatus
+  })
+)
+
+const totalApplications     = computed(() => filteredApplications.value.length)
+const documentsPendingCount = computed(() => filteredApplications.value
+  .filter(a => a.status === 'Docs Pending').length)
+const rejectedCount         = computed(() => filteredApplications.value
+  .filter(a => a.status === 'Rejected').length)
+
+/* ───────────────────────── Watchers ───────────────────────── */
+watch(activeTab, async tab => {
+  if (tab === 'students')       await fetchStudentsData()
+  else if (tab === 'applications') await fetchApplications()
+  else if (tab === 'schedule')  await fetchSchedule()
+  else if (tab === 'analytics') await fetchAnalytics()
+})
+
+/* ─────────────────────── Data Loaders ────────────────────── */
+async function fetchStudentsData () {
+  try {
+    const acceptedRes = await axios.get<Student[]>(`${BASE_URL}/students/accepted`)
+    allEnrolled.value = acceptedRes.data
+
     const appsRes = await axios.get<Application[]>(`${BASE_URL}/applications`)
-    const pendingApps = appsRes.data.filter(app => app.status === 'Pending')
-    pendingStudents.value = pendingApps.map(app => ({
-      id: app.application_id,
-      name: app.student_name,
-      course: app.course_name
-    }))
+    allPending.value = appsRes.data
+      .filter(app => app.status === 'Pending')
+      .map(app => ({
+        id: app.application_id,
+        name: app.student_name,
+        course: app.course_name,
+        city: '',
+        state: '',
+        gender: '',
+        score: 0,
+        school: ''
+      }))
   } catch (err) {
     console.error('Error fetching student data:', err)
   }
 }
 
-// Verify student (frontend + backend integration)
-const verifyStudent = async (student: Student) => {
+async function fetchApplications () {
   try {
-    await axios.patch(`${BASE_URL}/applications/${student.id}`, { 
-      status: 'Accepted' 
-    })
-    enrolledStudents.value.push(student)
-    pendingStudents.value = pendingStudents.value.filter(s => s.id !== student.id)
+    const res = await axios.get<Application[]>(`${BASE_URL}/applications`)
+    applications.value = res.data
+  } catch (err) {
+    console.error('Error fetching applications:', err)
+  }
+}
+
+async function fetchSchedule () {
+  try {
+    const res = await axios.get<ScheduleItem[]>(`${BASE_URL}/schedule`)
+    schedule.value = res.data
+  } catch (err) {
+    console.error('Error fetching schedule:', err)
+  }
+}
+
+async function fetchAnalytics () {
+  try {
+    const res = await axios.get<AnalyticsRow[]>(`${BASE_URL}/analytics`)
+    analyticsData.value = res.data             // raw → reactive
+  } catch (err) {
+    console.error('Error fetching analytics:', err)
+  }
+}
+
+/* ───────────────────────── Actions ───────────────────────── */
+async function verifyStudent (student: Student) {
+  try {
+    await axios.patch(`${BASE_URL}/applications/${student.id}`, { status: 'Accepted' })
+    allPending.value  = allPending.value.filter(s => s.id !== student.id)
+    allEnrolled.value.push({ ...student })
   } catch (err) {
     console.error('Verification failed:', err)
   }
 }
 
-// Initial data fetch
+function flipCard (idx: number) { flippedCard.value = idx }
+function openModal (type: string) { modalType.value = type; showModal.value = true }
+function logout () { localStorage.removeItem('token'); router.push('/login') }
+
+/* ───────────────────────── Lifecycle ─────────────────────── */
 onMounted(async () => {
-  if (activeTab.value === 'students') {
-    await fetchStudentsData()
-  }
+  if (activeTab.value === 'students')       await fetchStudentsData()
+  else if (activeTab.value === 'applications') await fetchApplications()
+  else if (activeTab.value === 'schedule')  await fetchSchedule()
+  else if (activeTab.value === 'analytics') await fetchAnalytics()
 })
 
-const getCourseName = (desc: string): string => {
-  // You can customize this if course name is added to description in future
-  return 'Based on Application';
-};
-
-const getExamDate = (desc: string): string => {
-  const match = desc.match(/<strong>(\d{1,2} [A-Za-z]+)<\/strong>/);
-  return match ? match[1] : 'Unknown';
-};
-
-const getReportingTime = (desc: string): string => {
-  const match = desc.match(/<strong>(\d{1,2}:\d{2} [APMapm]{2})<\/strong>/);
-  return match ? match[1] : 'Unknown';
-};
-
-const extractRound = (title: string): string => {
-  const match = title.match(/Round (\d+)/);
-  return match ? match[1] : '?';
-};
-
-function logout() {
-
-   localStorage.removeItem('token')
-   router.push('/login')
-}
-
-const props = defineProps({
-  activeTab: String,
-  applications: {
-    type: Array,
-    default: () => []
-  }
-})
-
-
-
-
-const flippedCard = ref(-1)
-const showModal = ref(false)
-const modalType = ref('')
-
-function flipCard(idx) {
-  flippedCard.value = idx
-  if (idx === -1) {
-    // Reset all flips
-    setTimeout(() => { flippedCard.value = -1 }, 300)
-  }
-}
-function openModal(type) {
-  modalType.value = type
-  showModal.value = true
-}
-
-
-
+/* ──────────────────────── (optional) Utils ───────────────── */
+const getExamDate      = (d:string) => d.match(/<strong>(\d{1,2} [A-Za-z]+)<\/strong>/)?.[1] ?? 'Unknown'
+const getReportingTime = (d:string) => d.match(/<strong>(\d{1,2}:\d{2} [APMapm]{2})<\/strong>/)?.[1] ?? 'Unknown'
+const extractRound     = (t:string) => t.match(/Round (\d+)/)?.[1] ?? '?'
 </script>
+
+
+
 
 
 <template>
@@ -354,11 +426,20 @@ function openModal(type) {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="(student, index) in enrolledStudents" :key="student.id" class="hover:bg-blue-100/70 transition">
-                <td class="p-3 text-center">{{ index + 1 }}</td>
-                <td class="p-3">{{ student.name }}</td>
-                <td class="p-3">{{ student.course }}</td>
-              </tr>
+             <tr
+              v-for="(student, index) in enrolledStudents"
+              :key="student.id"
+              class="hover:bg-blue-100/70 transition"
+              >
+            <td class="p-3 text-center">{{ index + 1 }}</td>
+            <td class="p-3 font-medium text-gray-800">{{ student.name }}</td>
+            <td class="p-3 text-gray-600">{{ student.course }}</td>
+            <td class="p-3 text-gray-600">{{ student.school }}</td>
+            <td class="p-3 text-gray-600">{{ student.city }}</td>
+            <td class="p-3 text-gray-600">{{ student.state }}</td>
+            <td class="p-3 text-center text-blue-600 font-semibold">{{ student.score }}</td>
+          </tr>
+
             </tbody>
           </table>
         </div>
@@ -387,14 +468,17 @@ function openModal(type) {
         </h2>
         <div class="flex-1 overflow-y-auto rounded-xl border border-yellow-100/50 bg-white/70">
           <table class="w-full text-sm text-gray-900">
-            <thead class="bg-yellow-50 sticky top-0 text-yellow-900">
-              <tr>
-                <th class="p-3 border-b">#</th>
-                <th class="p-3 border-b">Name</th>
-                <th class="p-3 border-b">Course</th>
-                <th class="p-3 border-b">Action</th>
-              </tr>
-            </thead>
+           <thead class="bg-blue-50 sticky top-0 text-blue-900">
+            <tr>
+              <th class="p-3 border-b">#</th>
+              <th class="p-3 border-b">Name</th>
+              <th class="p-3 border-b">Course</th>
+              <th class="p-3 border-b">School</th>
+              <th class="p-3 border-b">City</th>
+              <th class="p-3 border-b">State</th>
+              <th class="p-3 border-b">Score</th>
+            </tr>
+          </thead>
             <tbody>
               <tr v-for="(student, index) in pendingStudents" :key="student.id" class="hover:bg-yellow-100/70 transition">
                 <td class="p-3 text-center">{{ index + 1 }}</td>
@@ -731,7 +815,7 @@ function openModal(type) {
             </tr>
           </thead>
           <tbody>
-            <tr v-for="item in analytics" :key="item.id">
+           <tr v-for="item in analytics" :key="item.id">
               <td class="p-2 border text-center">{{ item.id }}</td>
               <td class="p-2 border">{{ item.student_name }}</td>
               <td class="p-2 border">{{ item.course_name }}</td>
@@ -743,7 +827,7 @@ function openModal(type) {
       </div>
     </div>
 
-    <!-- ────────── SETTINGS SECTION ────────── -->
+  
 <!-- ────────── SETTINGS SECTION ────────── -->
 <div v-if="activeTab === 'settings'" class="p-6 space-y-6">
   <h3 class="text-2xl font-bold mb-6 text-gray-800">Settings</h3>
