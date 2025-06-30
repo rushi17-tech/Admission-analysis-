@@ -18,7 +18,7 @@
 
     <!-- ────────── FLIP‑CARDS GRID ────────── -->
     <div class="grid gap-10 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-      <!-- CARD 0 — NEW APPLICATIONS -->
+      <!-- CARD 0 — NEW APPLICATIONS (no flip) -->
       <div class="relative perspective-1000 mx-auto" style="width:340px;height:400px;">
         <div class="flip-card">
           <div class="flip-card-front glass-card border border-cyan-400/40">
@@ -221,7 +221,7 @@ onMounted(async()=>{
 /* ────────── glass utilities ────────── */
 .glass-card{
   @apply flex flex-col items-center justify-center p-9 rounded-3xl
-          border border-white/10 shadow-xl transition-all duration-300 hover:scale-105;
+          border border-white/10 shadow-xl transition-all duration-300;
   background: rgba(17,24,39,0.55);        /* deep slate */
   backdrop-filter: blur(18px) saturate(160%);
 }
@@ -234,11 +234,29 @@ onMounted(async()=>{
           bg-gray-800/70 border border-gray-600 hover:scale-105 transition;
 }
 
-/* ────────── flip‑card mechanics (unchanged) ────────── */
+/* ────────── flip‑card mechanics (FIXED) ────────── */
 .perspective-1000{ perspective:1000px; }
-.flip-card{ @apply w-full h-full relative; transform-style:preserve-3d; transition:transform .7s cubic-bezier(.4,2.3,.3,1); }
-.flip-card-front{ z-index:2; backface-visibility:hidden; }
-.flip-card-back { transform:rotateY(180deg); backface-visibility:hidden; }
+
+.flip-card{
+  width:100%;
+  height:100%;
+  position:relative;
+  transform-style:preserve-3d;
+  transition:transform 0.7s cubic-bezier(.4,2.3,.3,1);
+}
+
+.flip-card-front,
+.flip-card-back{
+  @apply glass-card;
+  position:absolute;
+  width:100%;
+  height:100%;
+  top:0;
+  left:0;
+  backface-visibility:hidden;
+}
+
+.flip-card-back{ transform:rotateY(180deg); }
 .flip-card.flipped{ transform:rotateY(180deg); }
 
 /* ────────── modal glass ────────── */
