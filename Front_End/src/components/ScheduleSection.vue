@@ -6,35 +6,31 @@ import FlipCard from '@/components/flipcard.vue'
 
 interface ScheduleItem {
   title: string
-  description: string          // already formatted by the API (may contain <strong> tags)
+  description: string
 }
 
 const props = defineProps<{ activeTab?: string }>()
 const activeTab = computed(() => props.activeTab ?? 'schedule')
 
-// ────────── STATE ──────────
-const BASE_URL = 'http://localhost:8000/api'
-const schedule      = ref<ScheduleItem[]>([])   // cards loaded from backend
-const showModal     = ref(false)                // controls modal visibility
-const selectedItem  = ref<ScheduleItem | null>(null) // card user tapped
+const BASE_URL  = 'http://localhost:8000/api'
+const schedule  = ref<ScheduleItem[]>([])
+const showModal = ref(false)
+const selected  = ref<ScheduleItem | null>(null)
 
-// ────────── METHODS ──────────
 function openDetails(item: ScheduleItem) {
-  selectedItem.value = item
+  selected.value = item
   showModal.value = true
 }
 
-// ────────── LIFECYCLE ──────────
 onMounted(async () => {
   try {
     const { data } = await axios.get<ScheduleItem[]>(`${BASE_URL}/schedule`)
     schedule.value = data
   } catch (err) {
-    console.error('Could not load schedule; falling back to demo cards.', err)
-    // optional fallback so the UI isn’t empty if backend is down
+    console.error('Could not load schedule – demo fallback', err)
     schedule.value = [
       {
-        title: 'Demo Entrance Exam – Round 1',
+        title: 'Demo Entrance Exam – Round 1',
         description:
           'The entrance exam is scheduled for <strong>05 July</strong>. ' +
           'Report by <strong>09:00 AM</strong>. Round <strong>1</strong>.'
@@ -47,52 +43,35 @@ onMounted(async () => {
 <template>
   <div
     v-if="activeTab === 'schedule'"
-    class="p-8 min-h-screen bg-[#12131c] space-y-10 transition-colors duration-500"
+    class="relative py-10 px-3 md:px-10 min-h-[82vh] animate-fade-in text-white"
   >
-    <!-- ────────── PAGE TITLE ────────── -->
-    <h3 class="text-4xl font-extrabold text-white mb-8 tracking-wide text-center font-sans">
-      Entrance Exam Schedule
+    <!-- ───── title on blurred strip ───── -->
+    <h3 class="page-heading mb-12 text-4xl font-extrabold tracking-wide text-center">
+      Entrance&nbsp;Exam&nbsp;Schedule
     </h3>
 
-    <!-- ────────── CARD GRID ────────── -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 max-w-7xl mx-auto">
+    <!-- ───── schedule cards ───── -->
+    <div class="schedule-grid max-w-7xl mx-auto">
       <FlipCard
         v-for="(item, idx) in schedule"
         :key="idx"
-        class="mx-auto w-[320px] h-[350px]"
+        class="schedule-card"
       >
-        <!-- ────────── CARD FRONT ────────── -->
+        <!-- front -->
         <template #default>
-          <div
-            class="flex flex-col items-center justify-center h-full bg-[#1e202f] rounded-2xl border border-[#2f3245] p-6 transition-colors duration-300 hover:border-blue-500"
-          >
-            <h4 class="text-xl font-semibold text-blue-400 mb-3 text-center">
-              {{ item.title }}
-            </h4>
-
-            <!-- Show Details button -->
-            <button
-              @click.stop="openDetails(item)"
-              class="mt-4 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-            >
+          <div class="card-face">
+            <h4 class="card-title">{{ item.title }}</h4>
+            <button class="card-btn" @click.stop="openDetails(item)">
               Show&nbsp;Details
             </button>
           </div>
         </template>
 
-        <!-- ────────── CARD BACK ────────── -->
+        <!-- back -->
         <template #back>
-          <div
-            class="flex flex-col items-center justify-center h-full bg-[#23253f] rounded-2xl border border-blue-600 p-6 text-center"
-          >
-            <p
-              class="text-blue-200 text-sm leading-relaxed"
-              v-html="item.description"
-            />
-            <button
-              @click.stop="openDetails(item)"
-              class="mt-4 px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-            >
+          <div class="card-face card-back">
+            <p class="card-desc" v-html="item.description" />
+            <button class="card-btn" @click.stop="openDetails(item)">
               Show&nbsp;Details
             </button>
           </div>
@@ -100,36 +79,144 @@ onMounted(async () => {
       </FlipCard>
     </div>
 
-    <!-- ────────── DETAILS MODAL ────────── -->
-    <div
-      v-if="showModal"
-      @click.self="showModal = false"
-      class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
-    >
-      <div class="bg-[#1e202f] w-full max-w-md rounded-2xl p-6 shadow-lg">
-        <h4 class="text-2xl font-semibold text-white mb-4">
-          {{ selectedItem?.title }}
-        </h4>
-
-        <p
-          class="text-gray-300 leading-relaxed mb-6"
-          v-html="selectedItem?.description"
-        />
-
-        <button
-          @click="showModal = false"
-          class="w-full px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-        >
-          Close
-        </button>
+    <!-- ───── modal ───── -->
+    <transition name="fade">
+      <div
+        v-if="showModal"
+        @click.self="showModal = false"
+        class="modal-backdrop"
+      >
+        <div class="modal-panel">
+          <h4 class="modal-title">{{ selected?.title }}</h4>
+          <p class="modal-desc" v-html="selected?.description" />
+          <button class="modal-btn" @click="showModal = false">Close</button>
+        </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
 <style scoped>
-/* optional subtle glow on hover for the button / numbers */
-.drop-shadow-glow {
-  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+/* ────────── blurred heading strip ────────── */
+.page-heading {
+  @apply inline-block px-6 py-3 rounded-2xl;
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(14px) saturate(160%);
 }
+
+/* ────────── card grid ────────── */
+.schedule-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2.5rem;
+  justify-items: center;
+}
+
+/* ────────── card base ────────── */
+.schedule-card {
+  width: 320px;
+  height: 370px;
+  border-radius: 1.5rem;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  background: rgba(17, 24, 39, 0.55);
+  backdrop-filter: blur(18px) saturate(160%);
+  box-shadow: 0 6px 32px rgba(74, 222, 255, 0.15),
+              0 1.5px 8px rgba(139, 92, 246, 0.15);
+  transition: transform 0.18s, box-shadow 0.2s, border-color 0.2s;
+}
+.schedule-card:hover,
+.schedule-card:focus-within {
+  transform: translateY(-5px) scale(1.025);
+  border-color: #6366f1;
+  box-shadow:
+    0 0 0 2.5px #3b82f6,
+    0 6px 32px rgba(74, 222, 255, 0.18),
+    0 1.5px 8px rgba(139, 92, 246, 0.19);
+}
+
+/* ────────── card faces ────────── */
+.card-face {
+  @apply flex flex-col items-center justify-center h-full p-8 text-center;
+}
+.card-back {
+  background: rgba(31, 41, 55, 0.65);
+  border: 1.5px solid #6366f1;
+}
+
+/* ────────── card text ────────── */
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #60a5fa;
+  margin-bottom: 1.2rem;
+  text-shadow: 0 0 6px #3b82f6aa;
+}
+.card-desc {
+  color: #c7d2fe;
+  font-size: 1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  word-break: break-word;
+}
+
+/* ────────── button ────────── */
+.card-btn,
+.modal-btn {
+  @apply rounded-lg font-medium shadow text-white;
+  background: linear-gradient(90deg, #6366f1 40%, #8b5cf6 100%);
+  transition: background 0.18s, box-shadow 0.18s, transform 0.15s;
+}
+.card-btn {
+  padding: 0.5rem 1.5rem;
+}
+.modal-btn {
+  width: 100%;
+  padding: 0.75rem 0;
+}
+.card-btn:hover,
+.card-btn:focus,
+.modal-btn:hover,
+.modal-btn:focus {
+  background: linear-gradient(90deg, #8b5cf6 20%, #6366f1 100%);
+  box-shadow: 0 0 24px #8b5cf6cc;
+  transform: scale(1.04);
+}
+
+/* ────────── modal styles ────────── */
+.modal-backdrop {
+  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-lg;
+}
+.modal-panel {
+  @apply text-center rounded-2xl border shadow-2xl p-8 w-full max-w-md;
+  background: rgba(17, 24, 39, 0.65);
+  backdrop-filter: blur(22px) saturate(160%);
+}
+.modal-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 1.2rem;
+  text-shadow: 0 0 8px #8b5cf6;
+}
+.modal-desc {
+  color: #d1d5db;
+  margin-bottom: 2rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+/* ────────── fade transition ────────── */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in { animation: fadeIn 0.6s ease forwards; }
 </style>
