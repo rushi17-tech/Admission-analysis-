@@ -16,6 +16,7 @@ import ScheduleSection     from '@/components/ScheduleSection.vue'
 import AnalyticsSection    from '@/components/AnalyticsSection.vue'
 import SettingsSection     from '@/components/SettingsSection.vue'
 
+
 const activeTab = ref<
   'home' | 'students' | 'applications' | 'schedule' | 'analytics' | 'settings'
 >('home')
@@ -36,6 +37,15 @@ onMounted(() => {
         gridBg.appendChild(cell)
       }
     }
+  }
+
+  if (!document.querySelector('script[data-dotlottie-player]')) {
+    const script = document.createElement('script')
+    script.type = 'module'
+    script.src =
+      'https://unpkg.com/@dotlottie/player-component@2.7.12/dist/dotlottie-player.mjs'
+    script.setAttribute('data-dotlottie-player', 'true')
+    document.head.appendChild(script)
   }
 })
 </script>
@@ -105,28 +115,123 @@ onMounted(() => {
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'students'" class="menu-item flex items-center space-x-2">
-            <Users class="w-5 h-5" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <g fill="none" stroke="currentColor" stroke-dasharray="20" stroke-dashoffset="20" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.8">
+              <path d="M6 19v-1c0 -2.21 1.79 -4 4 -4h4c2.21 0 4 1.79 4 4v1">
+                <animate fill="freeze" attributeName="stroke-dashoffset" dur="0.8s" values="20;0" />
+              </path>
+              <path d="M12 11c-1.66 0 -3 -1.34 -3 -3c0 -1.66 1.34 -3 3 -3c1.66 0 3 1.34 3 3c0 1.66 -1.34 3 -3 3Z">
+                <animate fill="freeze" attributeName="stroke-dashoffset" begin="0.8s" dur="0.8s" values="20;0" />
+              </path>
+            </g>
+          </svg>
             <span>Students</span>
           </NavigationMenuLink>
         </NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'applications'" class="menu-item flex items-center space-x-2">
-            <FilePlus2 class="w-5 h-5" />
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+            <mask id="lineMdFileDocumentPlus0">
+              <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2">
+                <path stroke-dasharray="64" stroke-dashoffset="64" d="M13.5 3l5.5 5.5v11.5c0 0.55 -0.45 1 -1 1h-12c-0.55 0 -1 -0.45 -1 -1v-16c0 -0.55 0.45 -1 1 -1Z">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" dur="2.04s" values="64;0" />
+                </path>
+                <path d="M14.5 3.5l2.25 2.25l2.25 2.25z" opacity="0">
+                  <animate fill="freeze" attributeName="d" begin="2.04s" dur="0.68s" values="M14.5 3.5l2.25 2.25l2.25 2.25z;M14.5 3.5l0 4.5l4.5 0z" />
+                  <set fill="freeze" attributeName="opacity" begin="2.04s" to="1" />
+                </path>
+                <path stroke-dasharray="8" stroke-dashoffset="8" d="M9 13h6">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" begin="2.72s" dur="0.68s" values="8;0" />
+                </path>
+                <path stroke-dasharray="4" stroke-dashoffset="4" d="M9 17h3">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" begin="3.4s" dur="0.68s" values="4;0" />
+                </path>
+                <path fill="#000" fill-opacity="0" stroke="none" d="M19 13c3.31 0 6 2.69 6 6c0 3.31 -2.69 6 -6 6c-3.31 0 -6 -2.69 -6 -6c0 -3.31 2.69 -6 6 -6Z">
+                  <set fill="freeze" attributeName="fill-opacity" begin="4.08s" to="1" />
+                </path>
+                <path stroke-dasharray="8" stroke-dashoffset="8" d="M16 19h6">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" begin="4.08s" dur="0.68s" values="8;0" />
+                </path>
+                <path stroke-dasharray="8" stroke-dashoffset="8" d="M19 16v6">
+                  <animate fill="freeze" attributeName="stroke-dashoffset" begin="4.76s" dur="0.68s" values="8;0" />
+                </path>
+              </g>
+            </mask>
+            <rect width="24" height="24" fill="currentColor" mask="url(#lineMdFileDocumentPlus0)" />
+          </svg>
             <span>Applications</span>
           </NavigationMenuLink>
         </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink @click="activeTab = 'schedule'" class="menu-item flex items-center space-x-2">
-            <CalendarDays class="w-5 h-5" />
-            <span>Schedule</span>
+      <NavigationMenuItem>
+          <NavigationMenuLink
+            @click="activeTab = 'schedule'"
+            class="menu-item relative flex justify-center"
+            style="width: 80px; height: 80px"
+          >
+            <!-- ICON -->
+            <dotlottie-player
+              class="absolute"
+              src="https://lottie.host/2da353fe-c174-4f63-8789-da9359318733/CAV8nAVlPc.lottie"
+              background="transparent"
+              speed="1"
+              mode="normal"                    
+              autoplay 
+              style="
+                top: 0;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 60px;
+                height: 60px;
+              "
+            ></dotlottie-player>
+
+            <!-- TEXT -->
+            <span
+              class="absolute text-sm"
+              style="top: 45px; left: 50%; transform: translateX(-50%)"
+            >
+              Schedule
+            </span>
           </NavigationMenuLink>
         </NavigationMenuItem>
-        <NavigationMenuItem>
-          <NavigationMenuLink @click="activeTab = 'analytics'" class="menu-item flex items-center space-x-2">
-            <BarChart class="w-5 h-5" />
-            <span>Analytics</span>
-          </NavigationMenuLink>
-        </NavigationMenuItem>
+
+
+      <NavigationMenuItem>
+        <NavigationMenuLink
+          @click="activeTab = 'analytics'"
+          class="menu-item relative flex justify-center"
+          style="width: 80px; height: 80px;"
+        >
+          <!-- ─── ICON (adjust top / left here) ─── -->
+          <dotlottie-player
+            class="absolute"
+            src="https://lottie.host/2726b073-0576-480f-8c13-f9e069a1788c/RsBWOtzn9o.lottie"
+            background="transparent"
+            speed="1"
+            mode="normal"                    
+            autoplay                        
+            style="
+              top: 1px;                      /* raise or lower the icon */
+              left: 50%;                     /* center horizontally */
+              transform: translateX(-50%);
+              width: 100px;
+              height: 60px;
+            "
+          ></dotlottie-player>
+
+          <!-- ─── TEXT (adjust top for the gap) ─── -->
+          <span
+            class="absolute text-sm"
+            style="
+              top: 45px;                     /* distance below the icon */
+              left: 50%;
+              transform: translateX(-50%);
+            "
+          >
+            Analytics
+          </span>
+        </NavigationMenuLink>
+</NavigationMenuItem>
         <NavigationMenuItem>
           <NavigationMenuLink @click="activeTab = 'settings'" class="menu-item flex items-center space-x-2">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">

@@ -13,10 +13,7 @@ interface Row {
 
 const BASE_URL = 'http://localhost:8000/api'
 
-/* raw data */
 const raw = ref<Row[]>([])
-
-/* filters */
 const search = ref('')
 const course = ref('')
 const status = ref('')
@@ -24,21 +21,19 @@ const status = ref('')
 const courseOptions = computed(() => [...new Set(raw.value.map(r => r.course_name))])
 const statusOptions = ['pending', 'accepted', 'rejected']
 
-/* filtered list */
 const analytics = computed(() =>
   raw.value.filter(r => {
     const q = search.value.trim().toLowerCase()
     const okSearch =
       !q ||
       r.student_name.toLowerCase().includes(q) ||
-      r.course_name .toLowerCase().includes(q)
+      r.course_name.toLowerCase().includes(q)
     const okCourse = !course.value || r.course_name === course.value
     const okStatus = !status.value || r.status === status.value
     return okSearch && okCourse && okStatus
   })
 )
 
-/* fetch */
 onMounted(async () => {
   try {
     const { data } = await axios.get<Row[]>(`${BASE_URL}/analytics`)
@@ -57,9 +52,7 @@ onMounted(async () => {
     </h3>
 
     <!-- filters -->
-    <div
-      class="glass-filter flex flex-wrap gap-6 items-end mb-10 p-6 rounded-2xl"
-    >
+    <div class="glass-filter flex flex-wrap gap-6 items-end mb-10 p-6 rounded-2xl">
       <div>
         <label class="filter-label">Search</label>
         <input
@@ -72,7 +65,7 @@ onMounted(async () => {
 
       <div>
         <label class="filter-label">Course</label>
-        <select v-model="course" class="filter-input w-44">
+        <select v-model="course" class="filter-input w-44 colored-select">
           <option value="">All</option>
           <option v-for="c in courseOptions" :key="c" :value="c">{{ c }}</option>
         </select>
@@ -80,7 +73,7 @@ onMounted(async () => {
 
       <div>
         <label class="filter-label">Status</label>
-        <select v-model="status" class="filter-input w-36">
+        <select v-model="status" class="filter-input w-36 colored-select">
           <option value="">All</option>
           <option v-for="s in statusOptions" :key="s" :value="s">
             {{ s.charAt(0).toUpperCase() + s.slice(1) }}
@@ -127,42 +120,67 @@ onMounted(async () => {
 
 <style scoped>
 /* blurred heading */
-.page-heading{
+.page-heading {
   @apply inline-block px-6 py-3 rounded-2xl;
-  background: rgba(17,24,39,0.55);
+  background: rgba(17, 24, 39, 0.55);
   backdrop-filter: blur(14px) saturate(160%);
 }
 
 /* glass filter bar */
-.glass-filter{
-  background: rgba(17,24,39,0.55);
+.glass-filter {
+  background: rgba(17, 24, 39, 0.55);
   backdrop-filter: blur(18px) saturate(160%);
-  border: 1.5px solid rgba(255,255,255,0.12);
-  box-shadow: 0 4px 24px rgba(74,222,255,.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 24px rgba(74, 222, 255, 0.12);
 }
-.filter-label{ @apply block text-sm mb-1 text-gray-300; }
-.filter-input{
-  @apply bg-transparent border border-gray-500 rounded-md px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500;
+.filter-label {
+  @apply block text-sm mb-1 text-gray-300;
+}
+.filter-input {
+  @apply bg-transparent border border-gray-500 rounded-md px-3 py-1.5 outline-none focus:ring-2 focus:ring-indigo-500 text-white;
+}
+.colored-select {
+  background-color: rgba(31, 41, 55, 0.8); /* dark bg */
+  color: #fff;
+}
+.colored-select option {
+  background-color: #1f2937;
+  color: #fff;
 }
 
 /* glass table */
-.glass-table{
-  background: rgba(17,24,39,0.55);
+.glass-table {
+  background: rgba(17, 24, 39, 0.55);
   backdrop-filter: blur(18px) saturate(160%);
-  border: 1.5px solid rgba(255,255,255,0.1);
-  box-shadow: 0 6px 32px rgba(74,222,255,0.15),
-              0 1.5px 8px rgba(139,92,246,0.15);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 6px 32px rgba(74, 222, 255, 0.15),
+              0 1.5px 8px rgba(139, 92, 246, 0.15);
 }
-.tbl-th{
+.tbl-th {
   @apply px-4 py-2 font-semibold text-gray-100 border-b border-slate-600;
 }
-.tbl-td{
+.tbl-td {
   @apply px-4 py-2 border-b border-slate-700;
 }
 
 /* fade animation */
-.fade-enter-active,.fade-leave-active{ transition:opacity .3s; }
-.fade-enter-from,.fade-leave-to{ opacity:0; }
-@keyframes fadeIn{ from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0);} }
-.animate-fade-in{ animation:fadeIn .6s ease forwards; }
+.fade-enter-active, .fade-leave-active {
+  transition: opacity 0.3s;
+}
+.fade-enter-from, .fade-leave-to {
+  opacity: 0;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fadeIn 0.6s ease forwards;
+}
 </style>
