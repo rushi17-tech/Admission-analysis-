@@ -1,45 +1,32 @@
-<script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-
-const email = ref('')
-const password = ref('')
-const errorMessage = ref('')
-const router = useRouter()
-
-const emit = defineEmits(['login-success'])
-
-const handleLogin = () => {
-  if (email.value === 'welcome@gmail.com' && password.value === '1234') {
-    emit('login-success')
-    router.push('/home')
-  } else {
-    errorMessage.value = 'Invalid email or password. Please try again.'
-  }
-}
-</script>
-
 <template>
   <div class="login-page">
     <div class="login-box">
       <h2>Login</h2>
+
       <form @submit.prevent="handleLogin">
+        <!-- email -->
         <div class="user-box">
-          <input type="email" v-model="email" required />
+          <input type="email" v-model.trim="email" required />
           <label>Email</label>
         </div>
+
+        <!-- password -->
         <div class="user-box">
           <input type="password" v-model="password" required />
           <label>Password</label>
         </div>
+
+        <!-- errors -->
         <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
 
-        <button class="neon-button" type="submit">
+        <!-- main button -->
+        <button class="neon-button" type="submit" :disabled="loading">
           <span></span><span></span><span></span><span></span>
-          Submit
+          {{ loading ? 'Signing in…' : 'Submit' }}
         </button>
+
         <p class="signup-link">
-          Don't have an account?
+          Don’t have an account?
           <router-link to="/signup">Signup here</router-link>
         </p>
       </form>
@@ -47,7 +34,58 @@ const handleLogin = () => {
   </div>
 </template>
 
+<script setup>
+import { ref } from 'vue'
+import axios      from 'axios'
+import { useRouter } from 'vue-router'
+
+/* form state ------------------------------------------------------------ */
+const email        = ref('')
+const password     = ref('')
+const errorMessage = ref('')
+const loading      = ref(false)
+
+/* emit + router --------------------------------------------------------- */
+const emit   = defineEmits(['login-success'])
+const router = useRouter()
+
+/* axios instance (same as Signup.vue) ----------------------------------- */
+const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const api = axios.create({
+  baseURL: API_BASE,
+  withCredentials: true,
+})
+
+/* login handler --------------------------------------------------------- */
+const handleLogin = async () => {
+  loading.value     = true
+  errorMessage.value = ''
+
+  try {
+    const { data } = await api.post('/login', {
+      email:    email.value,
+      password: password.value,
+    })
+
+    /* store user id (optional) */
+    localStorage.setItem('user_id', data.user_id)
+
+    /* notify parent (if you’re listening) */
+    emit('login-success', data.user_id)
+
+    /* go to your main page */
+    await router.push('/home')
+  } catch (err) {
+    errorMessage.value =
+      err?.response?.data?.detail ?? 'Invalid email or password. Please try again.'
+  } finally {
+    loading.value = false
+  }
+}
+</script>
+
 <style scoped>
+/* --------- page layout (unchanged) --------- */
 .login-page {
   height: 100vh;
   margin: 0;
@@ -74,6 +112,7 @@ const handleLogin = () => {
   margin-bottom: 30px;
 }
 
+/* --------- form fields --------- */
 .user-box {
   position: relative;
   margin-bottom: 30px;
@@ -108,6 +147,7 @@ const handleLogin = () => {
   color: #03e9f4;
 }
 
+/* --------- neon button --------- */
 .neon-button {
   position: relative;
   display: inline-block;
@@ -123,7 +163,12 @@ const handleLogin = () => {
   letter-spacing: 4px;
 }
 
-.neon-button:hover {
+.neon-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.neon-button:hover:not([disabled]) {
   background: #03e9f4;
   color: #fff;
   border-radius: 5px;
@@ -138,61 +183,15 @@ const handleLogin = () => {
   display: block;
 }
 
-.neon-button span:nth-child(1) {
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, #03e9f4);
-  animation: anim1 1s linear infinite;
-}
+.neon-button span:nth-child(1) { top: 0;       left: -100%; width: 100%; height: 2px; background: linear-gradient(90deg,  transparent, #03e9f4); animation: anim1 1s linear infinite; }
+.neon-button span:nth-child(2) { right: 0;     top: -100%;  width: 2px;  height: 100%; background: linear-gradient(180deg, transparent, #03e9f4); animation: anim2 1s linear infinite; animation-delay: 0.25s; }
+.neon-button span:nth-child(3) { bottom: 0;    right: -100%; width: 100%; height: 2px; background: linear-gradient(270deg, transparent, #03e9f4); animation: anim3 1s linear infinite; animation-delay: 0.5s; }
+.neon-button span:nth-child(4) { left: 0;      bottom: -100%; width: 2px; height: 100%; background: linear-gradient(360deg, transparent, #03e9f4); animation: anim4 1s linear infinite; animation-delay: 0.75s; }
 
-.neon-button span:nth-child(2) {
-  right: 0;
-  top: -100%;
-  width: 2px;
-  height: 100%;
-  background: linear-gradient(180deg, transparent, #03e9f4);
-  animation: anim2 1s linear infinite;
-  animation-delay: 0.25s;
-}
-
-.neon-button span:nth-child(3) {
-  bottom: 0;
-  right: -100%;
-  width: 100%;
-  height: 2px;
-  background: linear-gradient(270deg, transparent, #03e9f4);
-  animation: anim3 1s linear infinite;
-  animation-delay: 0.5s;
-}
-
-.neon-button span:nth-child(4) {
-  left: 0;
-  bottom: -100%;
-  width: 2px;
-  height: 100%;
-  background: linear-gradient(360deg, transparent, #03e9f4);
-  animation: anim4 1s linear infinite;
-  animation-delay: 0.75s;
-}
-
-@keyframes anim1 {
-  0% { left: -100%; }
-  50%, 100% { left: 100%; }
-}
-@keyframes anim2 {
-  0% { top: -100%; }
-  50%, 100% { top: 100%; }
-}
-@keyframes anim3 {
-  0% { right: -100%; }
-  50%, 100% { right: 100%; }
-}
-@keyframes anim4 {
-  0% { bottom: -100%; }
-  50%, 100% { bottom: 100%; }
-}
+@keyframes anim1 { 0% { left: -100%; } 50%,100% { left: 100%; } }
+@keyframes anim2 { 0% { top: -100%; }  50%,100% { top: 100%;  } }
+@keyframes anim3 { 0% { right: -100%; } 50%,100% { right: 100%; } }
+@keyframes anim4 { 0% { bottom: -100%; }50%,100% { bottom: 100%;} }
 
 .error {
   color: #ff4d4f;
