@@ -24,16 +24,6 @@
 
 ---
 
-## 📑 Table of Contents
-- [Overview](#overview)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Usage](#usage)
-  - [Testing](#testing)
-
----
-
 ## 🧾 Overview
 
 **Admission-analysis-** is a full-stack developer tool designed to evaluate, interpret, and visualize admission data within educational platforms. It combines a modern Vue 3 and TypeScript-based front-end with a robust backend API for managing applications, students, and exams. The project emphasizes interactive dashboards, reusable UI components, and a visually engaging user experience.
