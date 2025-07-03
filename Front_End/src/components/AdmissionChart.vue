@@ -54,11 +54,12 @@
         </div>
 
         <div>
-          <label class="text-gray-300 mr-2">Gender:</label>
-          <select v-model="selectedGender" class="rounded p-2 bg-gray-700 text-white">
+          <label class="text-gray-300 mr-2">City:</label>
+          <select v-model="selectedCity" class="rounded p-2 bg-gray-700 text-white">
             <option value="">All</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
+            <option v-for="city in cityOptions" :key="city" :value="city">
+              {{ city }}
+            </option>
           </select>
         </div>
 
@@ -118,23 +119,32 @@ import {
   ArcElement
 } from 'chart.js'
 
-ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale, ArcElement)
+ChartJS.register(
+  Title,
+  Tooltip,
+  Legend,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  ArcElement
+)
 
 /* ────────── STATE ────────── */
 const applications = ref([])
-const schools      = ref([])   // list fetched from the server
-const loading      = ref(true)
-const error        = ref(null)
+const schools = ref([])
+const loading = ref(true)
+const error = ref(null)
 
 /* ────────── FILTERS ────────── */
 const selectedSchool = ref('')
 const selectedCourse = ref('')
+const selectedCity = ref('')
 const selectedGender = ref('')
 
 /* ────────── DATA FETCH ────────── */
 const fetchData = async () => {
   loading.value = true
-  error.value   = null
+  error.value = null
   try {
     const res = await fetch('http://localhost:8000/analytics')
     if (!res.ok) throw new Error('Failed to fetch analytics data')
@@ -164,10 +174,19 @@ onMounted(() => {
 /* ────────── FILTERED LIST & OPTIONS ────────── */
 const filteredApplications = computed(() =>
   applications.value.filter(app => {
-    const schoolOK = selectedSchool.value ? app.school_name === selectedSchool.value : true
-    const courseOK = selectedCourse.value ? app.course_name === selectedCourse.value : true
-    const genderOK = selectedGender.value ? app.gender === selectedGender.value : true
-    return schoolOK && courseOK && genderOK
+    const schoolOK = selectedSchool.value
+      ? app.school_name === selectedSchool.value
+      : true
+    const courseOK = selectedCourse.value
+      ? app.course_name === selectedCourse.value
+      : true
+    const cityOK = selectedCity.value
+      ? app.city === selectedCity.value
+      : true
+    const genderOK = selectedGender.value
+      ? app.gender === selectedGender.value
+      : true
+    return schoolOK && courseOK && cityOK && genderOK
   })
 )
 
@@ -175,15 +194,32 @@ const courseOptions = computed(() =>
   Array.from(new Set(applications.value.map(app => app.course_name)))
 )
 
-/* ────────── SUMMARY COUNTS ────────── */
-const admittedCount = computed(
-  () => filteredApplications.value.filter(a => (a.status || '').toLowerCase() === 'accepted').length
-)
-const pendingCount  = computed(
-  () => filteredApplications.value.filter(a => (a.status || '').toLowerCase() === 'pending').length
+/* ────────── UPDATED CITY OPTIONS (dedup + capitalized) ────────── */
+const cityOptions = computed(() =>
+  Array.from(
+    new Set(
+      applications.value
+        .map(app => (app.city || '').trim().toLowerCase())
+        .filter(city => city)
+    )
+  ).map(city => city.charAt(0).toUpperCase() + city.slice(1))
 )
 
-const averageScore  = computed(() => {
+/* ────────── SUMMARY COUNTS ────────── */
+const admittedCount = computed(
+  () =>
+    filteredApplications.value.filter(
+      a => (a.status || '').toLowerCase() === 'accepted'
+    ).length
+)
+const pendingCount = computed(
+  () =>
+    filteredApplications.value.filter(
+      a => (a.status || '').toLowerCase() === 'pending'
+    ).length
+)
+
+const averageScore = computed(() => {
   const scores = filteredApplications.value
     .map(a => Number(a.score))
     .filter(s => !isNaN(s))
@@ -195,16 +231,29 @@ const averageScore  = computed(() => {
 const resetFilters = () => {
   selectedSchool.value = ''
   selectedCourse.value = ''
+  selectedCity.value = ''
   selectedGender.value = ''
 }
 
-/* ────────── CHART DATA ────────── */
+/* ────────── UPDATED CITY BAR DATA (dedup + capitalized) ────────── */
 const cityBarData = computed(() => {
   const counts = {}
-  filteredApplications.value.forEach(a => (counts[a.city] = (counts[a.city] || 0) + 1))
+  filteredApplications.value.forEach(a => {
+    const city = (a.city || '').trim().toLowerCase()
+    if (city) counts[city] = (counts[city] || 0) + 1
+  })
+  const labels = Object.keys(counts).map(
+    city => city.charAt(0).toUpperCase() + city.slice(1)
+  )
   return {
-    labels: Object.keys(counts),
-    datasets: [{ label: 'Applications', backgroundColor: '#6366f1', data: Object.values(counts) }]
+    labels,
+    datasets: [
+      {
+        label: 'Applications',
+        backgroundColor: '#6366f1',
+        data: Object.values(counts)
+      }
+    ]
   }
 })
 
@@ -212,12 +261,17 @@ const genderPieData = computed(() => {
   const counts = { male: 0, female: 0 }
   filteredApplications.value.forEach(a => {
     const g = (a.gender || '').toLowerCase()
-    if (g === 'male')   counts.male++
+    if (g === 'male') counts.male++
     if (g === 'female') counts.female++
   })
   return {
     labels: ['Male', 'Female'],
-    datasets: [{ backgroundColor: ['#60a5fa', '#f472b6'], data: [counts.male, counts.female] }]
+    datasets: [
+      {
+        backgroundColor: ['#60a5fa', '#f472b6'],
+        data: [counts.male, counts.female]
+      }
+    ]
   }
 })
 
@@ -226,32 +280,51 @@ const statusDoughnutData = computed(() => {
   filteredApplications.value.forEach(a => {
     const s = (a.status || '').toLowerCase()
     if (s === 'accepted') counts.accepted++
-    if (s === 'pending')  counts.pending++
+    if (s === 'pending') counts.pending++
     if (s === 'rejected') counts.rejected++
   })
   return {
     labels: ['Accepted', 'Pending', 'Rejected'],
     datasets: [
-      { backgroundColor: ['#34d399', '#fbbf24', '#f87171'], data: [counts.accepted, counts.pending, counts.rejected] }
+      {
+        backgroundColor: ['#34d399', '#fbbf24', '#f87171'],
+        data: [counts.accepted, counts.pending, counts.rejected]
+      }
     ]
   }
 })
 
 const courseBarData = computed(() => {
   const counts = {}
-  filteredApplications.value.forEach(a => (counts[a.course_name] = (counts[a.course_name] || 0) + 1))
+  filteredApplications.value.forEach(a => {
+    counts[a.course_name] = (counts[a.course_name] || 0) + 1
+  })
   return {
     labels: Object.keys(counts),
-    datasets: [{ label: 'Applications', backgroundColor: '#06b6d4', data: Object.values(counts) }]
+    datasets: [
+      {
+        label: 'Applications',
+        backgroundColor: '#06b6d4',
+        data: Object.values(counts)
+      }
+    ]
   }
 })
 
 const schoolBarData = computed(() => {
   const counts = {}
-  filteredApplications.value.forEach(a => (counts[a.school_name] = (counts[a.school_name] || 0) + 1))
+  filteredApplications.value.forEach(a => {
+    counts[a.school_name] = (counts[a.school_name] || 0) + 1
+  })
   return {
     labels: Object.keys(counts),
-    datasets: [{ label: 'Applications', backgroundColor: '#34d399', data: Object.values(counts) }]
+    datasets: [
+      {
+        label: 'Applications',
+        backgroundColor: '#34d399',
+        data: Object.values(counts)
+      }
+    ]
   }
 })
 
