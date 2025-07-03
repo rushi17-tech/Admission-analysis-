@@ -112,6 +112,12 @@ def verify_password(p, hp) -> bool:        return pwd_context.verify(p, hp)
 router = APIRouter()                       # no prefix here
 
 # ───────── PUBLIC ROUTES ─────────
+
+@router.get("/schools", response_model=list[str])
+async def get_schools(session: AsyncSession = Depends(get_session)):
+    res = await session.execute(select(Course.school).distinct())
+    return [row[0] for row in res.fetchall()]
+
 @router.get("/schedule")
 async def get_schedules(session: AsyncSession = Depends(get_session)):
     res = await session.execute(select(EntranceExamSchedule))
@@ -132,10 +138,6 @@ async def get_schedules(session: AsyncSession = Depends(get_session)):
 # ---------- HOME /analytics (kept exactly as before) ----------
 @router.get("/analytics", response_model=list[dict])
 async def get_analytics(session: AsyncSession = Depends(get_session)):
-    """
-    Return one row per application, joined with student, course and (optionally) score.
-    This powers the Home tab, so its shape is unchanged.
-    """
     query = (
         select(
             Application.id,
@@ -145,6 +147,7 @@ async def get_analytics(session: AsyncSession = Depends(get_session)):
             Student.city,
             Student.gender,
             Course.name.label("course_name"),
+            Course.school.label("school_name"),   #  << NEW
             Score.score
         )
         .join(Student, Student.id == Application.student_id)
@@ -161,10 +164,12 @@ async def get_analytics(session: AsyncSession = Depends(get_session)):
             "city": row.city,
             "gender": row.gender.value,
             "course_name": row.course_name,
+            "school_name": row.school_name,      #  << NEW
             "score": row.score if row.score is not None else None,
         }
         for row in results.all()
     ]
+
 
 # ---------- NEW: all students ----------
 @router.get("/students", response_model=list[dict])

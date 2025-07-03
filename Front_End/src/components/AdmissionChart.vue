@@ -34,12 +34,25 @@
       <!-- Filter Bar -->
       <div class="flex flex-wrap gap-4 mb-6">
         <div>
+          <label class="text-gray-300 mr-2">School:</label>
+          <select v-model="selectedSchool" class="rounded p-2 bg-gray-700 text-white">
+            <option value="">All</option>
+            <option v-for="school in schools" :key="school" :value="school">
+              {{ school }}
+            </option>
+          </select>
+        </div>
+
+        <div>
           <label class="text-gray-300 mr-2">Course:</label>
           <select v-model="selectedCourse" class="rounded p-2 bg-gray-700 text-white">
             <option value="">All</option>
-            <option v-for="course in courseOptions" :key="course" :value="course">{{ course }}</option>
+            <option v-for="course in courseOptions" :key="course" :value="course">
+              {{ course }}
+            </option>
           </select>
         </div>
+
         <div>
           <label class="text-gray-300 mr-2">Gender:</label>
           <select v-model="selectedGender" class="rounded p-2 bg-gray-700 text-white">
@@ -48,6 +61,7 @@
             <option value="Female">Female</option>
           </select>
         </div>
+
         <button
           @click="resetFilters"
           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded"
@@ -66,28 +80,24 @@
 
         <!-- Gender Distribution -->
         <div class="h-[400px] bg-gray-800 rounded-xl p-4 shadow-lg flex justify-center items-center">
-          <Pie
-            :data="genderPieData"
-            :options="pieOptions"
-            :height="200"
-            :width="200"
-          />
+          <Pie :data="genderPieData" :options="pieOptions" :height="200" :width="200" />
         </div>
 
         <!-- Status Distribution -->
         <div class="h-[400px] bg-gray-800 rounded-xl p-4 shadow-lg flex justify-center items-center">
-          <Doughnut
-            :data="statusDoughnutData"
-            :options="pieOptions"
-            :height="200"
-            :width="200"
-          />
+          <Doughnut :data="statusDoughnutData" :options="pieOptions" :height="200" :width="200" />
         </div>
 
         <!-- Applications by Course -->
         <div class="h-[400px] bg-gray-800 rounded-xl p-4 shadow-lg">
           <h3 class="text-lg font-semibold text-cyan-200 mb-2">Applications by Course</h3>
           <Bar :data="courseBarData" :options="barOptions" />
+        </div>
+
+        <!-- Applications by School -->
+        <div class="h-[400px] bg-gray-800 rounded-xl p-4 shadow-lg">
+          <h3 class="text-lg font-semibold text-emerald-200 mb-2">Applications by School</h3>
+          <Bar :data="schoolBarData" :options="barOptions" />
         </div>
       </div>
     </div>
@@ -112,10 +122,12 @@ ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale,
 
 /* ────────── STATE ────────── */
 const applications = ref([])
-const loading       = ref(true)
-const error         = ref(null)
+const schools      = ref([])   // list fetched from the server
+const loading      = ref(true)
+const error        = ref(null)
 
 /* ────────── FILTERS ────────── */
+const selectedSchool = ref('')
 const selectedCourse = ref('')
 const selectedGender = ref('')
 
@@ -133,14 +145,29 @@ const fetchData = async () => {
     loading.value = false
   }
 }
-onMounted(fetchData)
+
+const fetchSchools = async () => {
+  try {
+    const res = await fetch('http://localhost:8000/schools')
+    if (!res.ok) throw new Error('Failed to fetch school list')
+    schools.value = await res.json()
+  } catch (err) {
+    error.value = err.message
+  }
+}
+
+onMounted(() => {
+  fetchData()
+  fetchSchools()
+})
 
 /* ────────── FILTERED LIST & OPTIONS ────────── */
 const filteredApplications = computed(() =>
   applications.value.filter(app => {
+    const schoolOK = selectedSchool.value ? app.school_name === selectedSchool.value : true
     const courseOK = selectedCourse.value ? app.course_name === selectedCourse.value : true
     const genderOK = selectedGender.value ? app.gender === selectedGender.value : true
-    return courseOK && genderOK
+    return schoolOK && courseOK && genderOK
   })
 )
 
@@ -148,7 +175,7 @@ const courseOptions = computed(() =>
   Array.from(new Set(applications.value.map(app => app.course_name)))
 )
 
-/* ────────── SUMMARY COUNTS (only these two lines edited) ────────── */
+/* ────────── SUMMARY COUNTS ────────── */
 const admittedCount = computed(
   () => filteredApplications.value.filter(a => (a.status || '').toLowerCase() === 'accepted').length
 )
@@ -166,6 +193,7 @@ const averageScore  = computed(() => {
 })
 
 const resetFilters = () => {
+  selectedSchool.value = ''
   selectedCourse.value = ''
   selectedGender.value = ''
 }
@@ -204,10 +232,7 @@ const statusDoughnutData = computed(() => {
   return {
     labels: ['Accepted', 'Pending', 'Rejected'],
     datasets: [
-      {
-        backgroundColor: ['#34d399', '#fbbf24', '#f87171'],
-        data: [counts.accepted, counts.pending, counts.rejected]
-      }
+      { backgroundColor: ['#34d399', '#fbbf24', '#f87171'], data: [counts.accepted, counts.pending, counts.rejected] }
     ]
   }
 })
@@ -221,6 +246,15 @@ const courseBarData = computed(() => {
   }
 })
 
+const schoolBarData = computed(() => {
+  const counts = {}
+  filteredApplications.value.forEach(a => (counts[a.school_name] = (counts[a.school_name] || 0) + 1))
+  return {
+    labels: Object.keys(counts),
+    datasets: [{ label: 'Applications', backgroundColor: '#34d399', data: Object.values(counts) }]
+  }
+})
+
 /* ────────── CHART OPTIONS ────────── */
 const barOptions = {
   responsive: true,
@@ -231,7 +265,6 @@ const barOptions = {
   }
 }
 
-/* circle charts: keep inside 200×200 canvas, legend at bottom */
 const pieOptions = {
   responsive: true,
   maintainAspectRatio: false,
