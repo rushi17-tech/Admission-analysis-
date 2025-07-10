@@ -1,6 +1,6 @@
 <!-- src/components/Schedule.vue -->
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, nextTick } from 'vue'
 import axios from 'axios'
 import FlipCard from '@/components/flipcard.vue'
 
@@ -14,13 +14,45 @@ const activeTab = computed(() => props.activeTab ?? 'schedule')
 
 const BASE_URL  = 'http://localhost:8000/api'
 const schedule  = ref<ScheduleItem[]>([])
-const showModal = ref(false)
-const selected  = ref<ScheduleItem | null>(null)
+const popoverIdx = ref<number|null>(null) // which card popover is open
 
-function openDetails(item: ScheduleItem) {
+const popoverPosition = ref<{top: number, left: number}|null>(null)
+const selected = ref<ScheduleItem | null>(null)
+
+function openDetails(item: ScheduleItem, idx: number, event: MouseEvent) {
   selected.value = item
-  showModal.value = true
+  popoverIdx.value = idx
+  // Position popover below the button
+  const btn = (event.target as HTMLElement)
+  const rect = btn.getBoundingClientRect()
+  // Adjust for scrolling and a small vertical offset
+  popoverPosition.value = {
+    top: rect.bottom + window.scrollY + 8,
+    left: rect.left + window.scrollX
+  }
 }
+
+function closePopover() {
+  popoverIdx.value = null
+  selected.value = null
+  popoverPosition.value = null
+}
+
+// Click outside handler
+function onDocumentClick(e: MouseEvent) {
+  const popover = document.getElementById('details-popover')
+  if (popover && !popover.contains(e.target as Node)) {
+    closePopover()
+  }
+}
+onMounted(() => {
+  document.addEventListener('click', onDocumentClick)
+})
+// Remove listener on unmount
+import { onUnmounted } from 'vue'
+onUnmounted(() => {
+  document.removeEventListener('click', onDocumentClick)
+})
 
 onMounted(async () => {
   try {
@@ -61,9 +93,30 @@ onMounted(async () => {
         <template #default>
           <div class="card-face">
             <h4 class="card-title">{{ item.title }}</h4>
-            <button class="card-btn" @click.stop="openDetails(item)">
+            <button class="card-btn"
+              @click.stop="openDetails(item, idx, $event)">
               Show&nbsp;Details
             </button>
+            <!-- Popover for this card -->
+            <transition name="fade">
+              <div
+                v-if="popoverIdx === idx && popoverPosition"
+                :id="'details-popover'"
+                class="popover-panel"
+                :style="{
+                  position: 'absolute',
+                  top: popoverPosition.top + 'px',
+                  left: popoverPosition.left + 'px'
+                }"
+                @click.stop
+              >
+                <div class="popover-content">
+                  <h4 class="modal-title">{{ selected?.title }}</h4>
+                  <p class="modal-desc" v-html="selected?.description" />
+                  <button class="modal-btn" @click="closePopover">Close</button>
+                </div>
+              </div>
+            </transition>
           </div>
         </template>
 
@@ -71,48 +124,49 @@ onMounted(async () => {
         <template #back>
           <div class="card-face card-back">
             <p class="card-desc" v-html="item.description" />
-            <button class="card-btn" @click.stop="openDetails(item)">
+            <button class="card-btn"
+              @click.stop="openDetails(item, idx, $event)">
               Show&nbsp;Details
             </button>
+            <!-- Popover for this card (back side) -->
+            <transition name="fade">
+              <div
+                v-if="popoverIdx === idx && popoverPosition"
+                :id="'details-popover'"
+                class="popover-panel"
+                :style="{
+                  position: 'absolute',
+                  top: popoverPosition.top + 'px',
+                  left: popoverPosition.left + 'px'
+                }"
+                @click.stop
+              >
+                <div class="popover-content">
+                  <h4 class="modal-title">{{ selected?.title }}</h4>
+                  <p class="modal-desc" v-html="selected?.description" />
+                  <button class="modal-btn" @click="closePopover">Close</button>
+                </div>
+              </div>
+            </transition>
           </div>
         </template>
       </FlipCard>
     </div>
-
-    <!-- ───── modal ───── -->
-    <transition name="fade">
-      <div
-        v-if="showModal"
-        @click.self="showModal = false"
-        class="modal-backdrop"
-      >
-        <div class="modal-panel">
-          <h4 class="modal-title">{{ selected?.title }}</h4>
-          <p class="modal-desc" v-html="selected?.description" />
-          <button class="modal-btn" @click="showModal = false">Close</button>
-        </div>
-      </div>
-    </transition>
   </div>
 </template>
 
 <style scoped>
-/* ────────── blurred heading strip ────────── */
 .page-heading {
   @apply inline-block px-6 py-3 rounded-2xl;
   background: rgba(17, 24, 39, 0.55);
   backdrop-filter: blur(14px) saturate(160%);
 }
-
-/* ────────── card grid ────────── */
 .schedule-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 2.5rem;
   justify-items: center;
 }
-
-/* ────────── card base ────────── */
 .schedule-card {
   width: 320px;
   height: 370px;
@@ -123,6 +177,7 @@ onMounted(async () => {
   box-shadow: 0 6px 32px rgba(74, 222, 255, 0.15),
               0 1.5px 8px rgba(139, 92, 246, 0.15);
   transition: transform 0.18s, box-shadow 0.2s, border-color 0.2s;
+  position: relative;
 }
 .schedule-card:hover,
 .schedule-card:focus-within {
@@ -133,17 +188,14 @@ onMounted(async () => {
     0 6px 32px rgba(74, 222, 255, 0.18),
     0 1.5px 8px rgba(139, 92, 246, 0.19);
 }
-
-/* ────────── card faces ────────── */
 .card-face {
   @apply flex flex-col items-center justify-center h-full p-8 text-center;
+  position: relative;
 }
 .card-back {
   background: rgba(31, 41, 55, 0.65);
   border: 1.5px solid #6366f1;
 }
-
-/* ────────── card text ────────── */
 .card-title {
   font-size: 1.25rem;
   font-weight: 600;
@@ -158,8 +210,6 @@ onMounted(async () => {
   margin-bottom: 1.5rem;
   word-break: break-word;
 }
-
-/* ────────── button ────────── */
 .card-btn,
 .modal-btn {
   @apply rounded-lg font-medium shadow text-white;
@@ -181,18 +231,23 @@ onMounted(async () => {
   box-shadow: 0 0 24px #8b5cf6cc;
   transform: scale(1.04);
 }
-
-/* ────────── modal styles ────────── */
-.modal-backdrop {
-  @apply fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-lg;
+/* Popover styles */
+.popover-panel {
+  z-index: 200;
+  min-width: 320px;
+  max-width: 340px;
+  background: rgba(17, 24, 39, 0.98);
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px rgba(74,222,255,0.18), 0 1.5px 8px rgba(139,92,246,0.19);
+  border: 1.5px solid #6366f1;
+  padding: 0;
+  /* Remove pointer-events so click outside works */
 }
-.modal-panel {
-  @apply text-center rounded-2xl border shadow-2xl p-8 w-full max-w-md;
-  background: rgba(17, 24, 39, 0.65);
-  backdrop-filter: blur(22px) saturate(160%);
+.popover-content {
+  @apply p-6 text-center;
 }
 .modal-title {
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-weight: 700;
   color: #fff;
   margin-bottom: 1.2rem;
@@ -204,11 +259,9 @@ onMounted(async () => {
   font-size: 1.05rem;
   line-height: 1.6;
 }
-
-/* ────────── fade transition ────────── */
 .fade-enter-active,
 .fade-leave-active {
-  transition: opacity 0.3s;
+  transition: opacity 0.2s;
 }
 .fade-enter-from,
 .fade-leave-to {
