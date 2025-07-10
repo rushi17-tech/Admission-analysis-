@@ -33,34 +33,79 @@
 
       <!-- Filter Bar -->
       <div class="flex flex-wrap gap-4 mb-6">
-        <div>
+        <!-- School Filter with Checkboxes -->
+        <div class="relative">
           <label class="text-gray-300 mr-2">School:</label>
-          <select v-model="selectedSchool" class="rounded p-2 bg-gray-700 text-white">
-            <option value="">All</option>
-            <option v-for="school in schools" :key="school" :value="school">
-              {{ school }}
-            </option>
-          </select>
+          <button
+            @click="showSchoolDropdown = !showSchoolDropdown"
+            class="rounded p-2 bg-gray-700 text-white w-48 text-left"
+          >
+            {{ selectedSchools.length ? selectedSchools.join(', ') : 'All' }}
+          </button>
+          <div
+            v-if="showSchoolDropdown"
+            class="absolute bg-gray-800 z-50 mt-1 w-48 max-h-60 overflow-y-auto shadow-lg rounded p-2"
+          >
+            <div v-for="school in schools" :key="school" class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                :value="school"
+                v-model="selectedSchools"
+                class="form-checkbox text-indigo-500"
+              />
+              <label class="text-white">{{ school }}</label>
+            </div>
+          </div>
         </div>
 
-        <div>
+        <!-- Course Filter with Checkboxes -->
+        <div class="relative">
           <label class="text-gray-300 mr-2">Course:</label>
-          <select v-model="selectedCourse" class="rounded p-2 bg-gray-700 text-white">
-            <option value="">All</option>
-            <option v-for="course in courseOptions" :key="course" :value="course">
-              {{ course }}
-            </option>
-          </select>
+          <button
+            @click="showCourseDropdown = !showCourseDropdown"
+            class="rounded p-2 bg-gray-700 text-white w-48 text-left"
+          >
+            {{ selectedCourses.length ? selectedCourses.join(', ') : 'All' }}
+          </button>
+          <div
+            v-if="showCourseDropdown"
+            class="absolute bg-gray-800 z-50 mt-1 w-48 max-h-60 overflow-y-auto shadow-lg rounded p-2"
+          >
+            <div v-for="course in courseOptions" :key="course" class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                :value="course"
+                v-model="selectedCourses"
+                class="form-checkbox text-indigo-500"
+              />
+              <label class="text-white">{{ course }}</label>
+            </div>
+          </div>
         </div>
 
-        <div>
+        <!-- City Filter with Checkboxes -->
+        <div class="relative">
           <label class="text-gray-300 mr-2">City:</label>
-          <select v-model="selectedCity" class="rounded p-2 bg-gray-700 text-white">
-            <option value="">All</option>
-            <option v-for="city in cityOptions" :key="city" :value="city">
-              {{ city }}
-            </option>
-          </select>
+          <button
+            @click="showCityDropdown = !showCityDropdown"
+            class="rounded p-2 bg-gray-700 text-white w-48 text-left"
+          >
+            {{ selectedCities.length ? selectedCities.join(', ') : 'All' }}
+          </button>
+          <div
+            v-if="showCityDropdown"
+            class="absolute bg-gray-800 z-50 mt-1 w-48 max-h-60 overflow-y-auto shadow-lg rounded p-2"
+          >
+            <div v-for="city in cityOptions" :key="city" class="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                :value="city"
+                v-model="selectedCities"
+                class="form-checkbox text-indigo-500"
+              />
+              <label class="text-white">{{ city }}</label>
+            </div>
+          </div>
         </div>
 
         <button
@@ -73,29 +118,24 @@
 
       <!-- Chart Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <!-- Applications by City -->
         <div class="h-[400px] bg-gray-800 rounded-xl p-4 shadow-lg">
           <h3 class="text-lg font-semibold text-indigo-200 mb-2">Applications by City</h3>
           <Bar :data="cityBarData" :options="barOptions" />
         </div>
 
-        <!-- Gender Distribution -->
         <div class="h-[400px] bg-gray-800 rounded-xl p-4 shadow-lg flex justify-center items-center">
           <Pie :data="genderPieData" :options="pieOptions" :height="200" :width="200" />
         </div>
 
-        <!-- Status Distribution -->
         <div class="h-[400px] bg-gray-800 rounded-xl p-4 shadow-lg flex justify-center items-center">
           <Doughnut :data="statusDoughnutData" :options="pieOptions" :height="200" :width="200" />
         </div>
 
-        <!-- Applications by Course -->
         <div class="h-[400px] bg-gray-800 rounded-xl p-4 shadow-lg">
           <h3 class="text-lg font-semibold text-cyan-200 mb-2">Applications by Course</h3>
           <Bar :data="courseBarData" :options="barOptions" />
         </div>
 
-        <!-- Applications by School -->
         <div class="h-[400px] bg-gray-800 rounded-xl p-4 shadow-lg">
           <h3 class="text-lg font-semibold text-emerald-200 mb-2">Applications by School</h3>
           <Bar :data="schoolBarData" :options="barOptions" />
@@ -129,19 +169,20 @@ ChartJS.register(
   ArcElement
 )
 
-/* ────────── STATE ────────── */
 const applications = ref([])
 const schools = ref([])
 const loading = ref(true)
 const error = ref(null)
 
-/* ────────── FILTERS ────────── */
-const selectedSchool = ref('')
-const selectedCourse = ref('')
-const selectedCity = ref('')
+/* Filters */
+const selectedSchools = ref([])
+const selectedCourses = ref([])
+const selectedCities = ref([])
 const selectedGender = ref('')
+const showSchoolDropdown = ref(false)
+const showCourseDropdown = ref(false)
+const showCityDropdown = ref(false)
 
-/* ────────── DATA FETCH ────────── */
 const fetchData = async () => {
   loading.value = true
   error.value = null
@@ -171,21 +212,28 @@ onMounted(() => {
   fetchSchools()
 })
 
-/* ────────── FILTERED LIST & OPTIONS ────────── */
 const filteredApplications = computed(() =>
   applications.value.filter(app => {
-    const schoolOK = selectedSchool.value
-      ? app.school_name === selectedSchool.value
-      : true
-    const courseOK = selectedCourse.value
-      ? app.course_name === selectedCourse.value
-      : true
-    const cityOK = selectedCity.value
-      ? app.city === selectedCity.value
-      : true
-    const genderOK = selectedGender.value
-      ? app.gender === selectedGender.value
-      : true
+    const schoolOK =
+      selectedSchools.value.length > 0
+        ? selectedSchools.value.includes(app.school_name)
+        : true
+
+    const courseOK =
+      selectedCourses.value.length > 0
+        ? selectedCourses.value.includes(app.course_name)
+        : true
+
+    const cityOK =
+      selectedCities.value.length > 0
+        ? selectedCities.value.includes(
+            (app.city || '').trim().charAt(0).toUpperCase() +
+              (app.city || '').trim().slice(1).toLowerCase()
+          )
+        : true
+
+    const genderOK = selectedGender.value ? app.gender === selectedGender.value : true
+
     return schoolOK && courseOK && cityOK && genderOK
   })
 )
@@ -194,7 +242,6 @@ const courseOptions = computed(() =>
   Array.from(new Set(applications.value.map(app => app.course_name)))
 )
 
-/* ────────── UPDATED CITY OPTIONS (dedup + capitalized) ────────── */
 const cityOptions = computed(() =>
   Array.from(
     new Set(
@@ -205,46 +252,36 @@ const cityOptions = computed(() =>
   ).map(city => city.charAt(0).toUpperCase() + city.slice(1))
 )
 
-/* ────────── SUMMARY COUNTS ────────── */
-const admittedCount = computed(
-  () =>
-    filteredApplications.value.filter(
-      a => (a.status || '').toLowerCase() === 'accepted'
-    ).length
+const admittedCount = computed(() =>
+  filteredApplications.value.filter(a => (a.status || '').toLowerCase() === 'accepted').length
 )
-const pendingCount = computed(
-  () =>
-    filteredApplications.value.filter(
-      a => (a.status || '').toLowerCase() === 'pending'
-    ).length
+
+const pendingCount = computed(() =>
+  filteredApplications.value.filter(a => (a.status || '').toLowerCase() === 'pending').length
 )
 
 const averageScore = computed(() => {
-  const scores = filteredApplications.value
-    .map(a => Number(a.score))
-    .filter(s => !isNaN(s))
+  const scores = filteredApplications.value.map(a => Number(a.score)).filter(s => !isNaN(s))
   return scores.length
     ? (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1)
     : 'N/A'
 })
 
 const resetFilters = () => {
-  selectedSchool.value = ''
-  selectedCourse.value = ''
-  selectedCity.value = ''
+  selectedSchools.value = []
+  selectedCourses.value = []
+  selectedCities.value = []
   selectedGender.value = ''
 }
 
-/* ────────── UPDATED CITY BAR DATA (dedup + capitalized) ────────── */
+/* Chart Data */
 const cityBarData = computed(() => {
   const counts = {}
   filteredApplications.value.forEach(a => {
     const city = (a.city || '').trim().toLowerCase()
     if (city) counts[city] = (counts[city] || 0) + 1
   })
-  const labels = Object.keys(counts).map(
-    city => city.charAt(0).toUpperCase() + city.slice(1)
-  )
+  const labels = Object.keys(counts).map(city => city.charAt(0).toUpperCase() + city.slice(1))
   return {
     labels,
     datasets: [
@@ -328,7 +365,6 @@ const schoolBarData = computed(() => {
   }
 })
 
-/* ────────── CHART OPTIONS ────────── */
 const barOptions = {
   responsive: true,
   plugins: { legend: { display: false }, title: { display: false } },
@@ -347,7 +383,3 @@ const pieOptions = {
   }
 }
 </script>
-
-<style scoped>
-/* No extra styles needed */
-</style>
